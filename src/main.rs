@@ -1,12 +1,16 @@
 use image::{RgbImage, ImageBuffer};
 
+mod geometry;
+use geometry::vector::Vector3;
+
+
 fn main() {
 
     // Image
     const IMAGE_WIDTH: u32 = 256;
     const IMAGE_HEIGHT: u32 = 256;
 
-    // RenderS
+    // Render
     let mut img_buf: RgbImage = image::ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
     for j in (0..IMAGE_HEIGHT).rev()  {
