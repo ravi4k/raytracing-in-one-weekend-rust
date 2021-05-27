@@ -1,5 +1,6 @@
 use std::ops::{Add, Sub, Mul, Div, AddAssign, Neg, MulAssign};
 
+#[derive(Clone, Copy)]
 pub struct Vector3 {
     pub x: f32,
     pub y: f32,
@@ -93,7 +94,7 @@ impl Mul<Vector3> for f32 {
     type Output = Vector3;
 
     fn mul(self, _rhs: Vector3) -> Self::Output {
-        Self::Output { x: self * _rhs.x, y: self * _rhs.x, z: self * _rhs.x}
+        Self::Output { x: self * _rhs.x, y: self * _rhs.y, z: self * _rhs.z}
     }
 }
 
@@ -102,6 +103,14 @@ impl Div for Vector3 {
 
     fn div(self, _rhs: Self) -> Self::Output {
         Self { x: self.x / _rhs.x, y: self.y / _rhs.y, z: self.z / _rhs.z }
+    }
+}
+
+impl Div<f32> for Vector3 {
+    type Output = Vector3;
+
+    fn div(self, _rhs: f32) -> Self::Output {
+        Self::Output { x: self.x / _rhs, y: self.y / _rhs, z: self.z / _rhs }
     }
 }
 

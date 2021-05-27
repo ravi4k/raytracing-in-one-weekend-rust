@@ -1,9 +1,20 @@
 use std::ops::{Add, Mul, AddAssign, MulAssign};
+use image::Rgb;
 
 pub struct Color {
     pub r: f32,
     pub g: f32,
     pub b: f32,
+}
+
+impl Color {
+    pub fn get_pixel(self) -> image::Rgb<u8> {
+        let ir = (255.999 * self.r) as u8;
+        let ig = (255.999 * self.g) as u8;
+        let ib = (255.999 * self.b) as u8;
+
+        Rgb([ir, ig, ib])
+    }
 }
 
 impl Add for Color {
