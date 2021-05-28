@@ -6,12 +6,15 @@ use geometry::color::Color;
 use geometry::ray::Ray;
 
 mod objects;
-use objects::hittable::{HitRecord, Hittable};
-use objects::hittable::HittableList;
+use objects::hittable::{HitRecord, HittableList};
+use objects::sphere::Sphere;
+
+mod world;
+use world::camera::Camera;
 
 mod utils;
 use utils::{INF_F32, PI, degrees_to_radians};
-use crate::objects::sphere::Sphere;
+use crate::utils::random_f32;
 
 fn ray_color(ray: Ray, world: &HittableList) -> Color {
     let hit_rec = world.hit(&ray, 0.0, INF_F32);
@@ -31,9 +34,10 @@ fn ray_color(ray: Ray, world: &HittableList) -> Color {
 fn main() {
 
     // Image
-    const IMAGE_WIDTH: u32 = 1280;
-    const IMAGE_HEIGHT: u32 = 720;
+    const IMAGE_WIDTH: u32 = 640;
+    const IMAGE_HEIGHT: u32 = 480;
     const ASPECT_RATIO: f32 = IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32;
+    const SPP: u32 = 10;
 
     // World
     let mut world = HittableList {
@@ -49,31 +53,22 @@ fn main() {
     }));
 
     //Camera
-    const VIEWPORT_HEIGHT: f32 = 2.0;
-    const VIEWPORT_WIDTH: f32 = VIEWPORT_HEIGHT * ASPECT_RATIO;
-    const FOCAL_LENGTH: f32 = 1.0;
-
-    let cam_position: Point = Point { x: 0.0, y: 0.0, z:0.0 };
-    let horizontal: Point = Point { x: VIEWPORT_WIDTH, y: 0.0, z: 0.0 };
-    let vertical: Point = Point { x: 0.0, y: VIEWPORT_HEIGHT, z: 0.0 };
-    let lower_left: Point = cam_position - horizontal / 2.0 - vertical / 2.0 - Point { x: 0.0, y: 0.0, z: FOCAL_LENGTH };
+    let camera = Camera::new();
 
     // Render
     let mut img_buf: RgbImage = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
     for j in (0..IMAGE_HEIGHT).rev()  {
         for i in 0..IMAGE_WIDTH {
-            let u = i as f32/ (IMAGE_WIDTH - 1) as f32;
-            let v = j as f32/ (IMAGE_HEIGHT - 1) as f32;
+            let mut pixel_color = Color { r: 0.0, g: 0.0, b: 0.0};
+            for _ in 0..SPP {
+                let u = (i as f32 + random_f32()) / (IMAGE_WIDTH - 1) as f32;
+                let v = (j as f32 + random_f32()) / (IMAGE_HEIGHT - 1) as f32;
 
-            let ray_direction = (lower_left + u * horizontal + v * vertical - cam_position).direction();
-            let ray = Ray {
-                origin: cam_position,
-                direction: ray_direction,
-            };
-
-            let pixel_color: Color = ray_color(ray, &world);
-            img_buf.put_pixel(i,IMAGE_HEIGHT - 1 - j, pixel_color.get_pixel());
+                let ray = camera.get_ray(u, v);
+                pixel_color += ray_color(ray, &world);
+            }
+            img_buf.put_pixel(i, IMAGE_HEIGHT - 1 - j, pixel_color.get_pixel(SPP));
         }
     }
     img_buf.save("render.png").unwrap();

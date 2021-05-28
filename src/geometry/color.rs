@@ -7,11 +7,21 @@ pub struct Color {
     pub b: f32,
 }
 
+fn clamp(x: f32, min: f32, max: f32) -> f32 {
+    if x < min {
+        return min;
+    }
+    if x > max {
+        return max;
+    }
+    x
+}
+
 impl Color {
-    pub fn get_pixel(self) -> image::Rgb<u8> {
-        let ir = (255.999 * self.r) as u8;
-        let ig = (255.999 * self.g) as u8;
-        let ib = (255.999 * self.b) as u8;
+    pub fn get_pixel(&self, spp: u32) -> image::Rgb<u8> {
+        let ir = (255.999 * clamp(self.r / spp as f32, 0.0, 1.0)) as u8;
+        let ig = (255.999 * clamp(self.g / spp as f32, 0.0, 1.0)) as u8;
+        let ib = (255.999 * clamp(self.b / spp as f32, 0.0, 1.0)) as u8;
 
         Rgb([ir, ig, ib])
     }
