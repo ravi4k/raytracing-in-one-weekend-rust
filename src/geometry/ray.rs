@@ -6,7 +6,7 @@ pub struct Ray {
 }
 
 impl Ray {
-    pub fn at_distance(self, distance: f32) -> Point {
+    pub fn at_distance(&self, distance: f32) -> Point {
         self.origin + distance * self.direction
     }
 }

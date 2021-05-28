@@ -5,26 +5,23 @@ use geometry::vector::{Vector3, Point};
 use geometry::color::Color;
 use geometry::ray::Ray;
 
+mod objects;
+use objects::hittable::{HitRecord, Hittable};
+use objects::hittable::HittableList;
+
 mod utils;
+use utils::{INF_F32, PI, degrees_to_radians};
+use crate::objects::sphere::Sphere;
 
-fn hit_sphere(center: Point, radius: f32, ray: &Ray) -> f32 {
-    let oc = ray.origin - center;
-    let b = 2.0 * oc.dot(ray.direction);
-    let c = oc.length_squared() - radius.powi(2);
-    let discriminant = b.powi(2) - 4.0 * c;
-
-    if discriminant > 0.0 {
-        return (-b - discriminant.sqrt()) / 2.0;
-    }
-    -1.0
-}
-
-fn ray_color(ray: Ray) -> Color {
-    let t = hit_sphere(Point { x: 0.0, y: 0.0, z: -1.0 }, 0.5, &ray);
-
-    if t > 0.0 {
-        let normal = (ray.at_distance(t) - Point { x: 0.0, y: 0.0, z: -1.0 }).direction();
-        return 0.5 * Color {r: normal.x + 1.0, g: normal.y + 1.0, b: normal.z + 1.0};
+fn ray_color(ray: Ray, world: &HittableList) -> Color {
+    let hit_rec = world.hit(&ray, 0.0, INF_F32);
+    if hit_rec.object.is_some() {
+        let normal = hit_rec.object.unwrap().normal(hit_rec.intersection);
+        return 0.5 * Color {
+            r: normal.x + 1.0,
+            g: normal.y + 1.0,
+            b: normal.z + 1.0,
+        };
     }
 
     let t = 0.5 * (ray.direction.y + 1.0);
@@ -37,6 +34,19 @@ fn main() {
     const IMAGE_WIDTH: u32 = 1280;
     const IMAGE_HEIGHT: u32 = 720;
     const ASPECT_RATIO: f32 = IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32;
+
+    // World
+    let mut world = HittableList {
+        objects: Vec::new(),
+    };
+    world.add(Box::new(Sphere {
+        center: Point { x: 0.0, y: 0.0, z: -1.0},
+        radius: 0.5,
+    }));
+    world.add(Box::new(Sphere {
+        center: Point { x: 0.0, y: -100.5, z: -1.0},
+        radius: 100.0,
+    }));
 
     //Camera
     const VIEWPORT_HEIGHT: f32 = 2.0;
@@ -62,7 +72,7 @@ fn main() {
                 direction: ray_direction,
             };
 
-            let pixel_color: Color = ray_color(ray);
+            let pixel_color: Color = ray_color(ray, &world);
             img_buf.put_pixel(i,IMAGE_HEIGHT - 1 - j, pixel_color.get_pixel());
         }
     }
