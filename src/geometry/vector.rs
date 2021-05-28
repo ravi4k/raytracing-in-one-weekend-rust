@@ -1,4 +1,8 @@
 use std::ops::{Add, Sub, Mul, Div, AddAssign, Neg, MulAssign};
+use crate::utils::random_f32;
+
+use rand::{thread_rng, Rng};
+use rand_distr::StandardNormal;
 
 #[derive(Clone, Copy)]
 pub struct Vector3 {
@@ -35,6 +39,14 @@ impl Vector3 {
     pub fn near_zero(&self) -> bool {
         const e: f32= 1e-6;
         self.x.abs() < e && self.y.abs() < e && self.z.abs() < e
+    }
+
+    pub fn random_unit_vector() -> Self {
+        Self {
+            x: thread_rng().sample(StandardNormal),
+            y: thread_rng().sample(StandardNormal),
+            z: thread_rng().sample(StandardNormal),
+        }.direction()
     }
 }
 
