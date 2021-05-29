@@ -1,5 +1,6 @@
 use std::ops::{Add, Mul, AddAssign, MulAssign};
 use image::Rgb;
+use crate::utils::random_f32;
 
 #[derive(Clone, Copy)]
 pub struct Color {
@@ -25,6 +26,14 @@ impl Color {
         let ib = (255.999 * clamp(self.b / spp as f32, 0.0, 1.0).sqrt()) as u8;
 
         Rgb([ir, ig, ib])
+    }
+
+    pub fn random() -> Self {
+        Self {
+            r: random_f32(),
+            g: random_f32(),
+            b: random_f32(),
+        }
     }
 }
 

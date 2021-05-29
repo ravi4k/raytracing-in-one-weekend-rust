@@ -20,6 +20,16 @@ pub fn random_f32_range(min: f32, max: f32) -> f32 {
 
 pub fn random_in_unit_sphere() -> Point {
     let direction = Vector3::random_unit_vector();
-    let distance = random_f32().sqrt();
+    let distance = random_f32().cbrt();
     distance * direction
+}
+
+pub fn random_in_unit_disk() -> Point {
+    let direction = Vector3::random_unit_vector();
+    let distance = random_f32().sqrt();
+    Point {
+        x: distance * direction.x,
+        y: distance * direction.y,
+        z: 0.0,
+    }
 }
