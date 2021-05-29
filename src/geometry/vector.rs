@@ -1,5 +1,4 @@
 use std::ops::{Add, Sub, Mul, Div, AddAssign, Neg, MulAssign};
-use crate::utils::random_f32;
 
 use rand::{thread_rng, Rng};
 use rand_distr::StandardNormal;

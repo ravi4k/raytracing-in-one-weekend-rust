@@ -14,11 +14,12 @@ use world::camera::Camera;
 
 mod materials;
 use materials::lambertian::Lambertian;
+use materials::metal::Metal;
 
 mod utils;
 use utils::{random_f32};
 use utils::{degrees_to_radians, INF_F32, PI};
-use crate::materials::metal::Metal;
+use crate::materials::dielectric::Dielectric;
 
 fn ray_color(ray: Ray, world: &HittableList, depth: u32) -> Color {
     if depth == 0 {
@@ -70,10 +71,10 @@ fn scene() -> HittableList {
         radius: 0.5,
         material: Box::new(Lambertian {
             color: Color {
-                r: 0.7,
-                g: 0.3,
-                b: 0.3,
-            }
+                r: 0.1,
+                g: 0.2,
+                b: 0.5,
+            },
         }),
     }));
 
@@ -84,12 +85,20 @@ fn scene() -> HittableList {
             z: -1.0,
         },
         radius: 0.5,
-        material: Box::new(Metal {
-            color: Color {
-                r: 0.8,
-                g: 0.8,
-                b: 0.8,
-            }
+        material: Box::new(Dielectric {
+            refractive_index: 1.5,
+        }),
+    }));
+
+    world.add(Box::new(Sphere {
+        center: Point {
+            x: -1.0,
+            y: 0.0,
+            z: -1.0,
+        },
+        radius: -0.4,
+        material: Box::new(Dielectric {
+            refractive_index: 1.5,
         }),
     }));
 
@@ -105,7 +114,8 @@ fn scene() -> HittableList {
                 r: 0.8,
                 g: 0.6,
                 b: 0.2,
-            }
+            },
+            fuzz: 0.0,
         }),
     }));
 
@@ -117,7 +127,7 @@ fn main() {
     const IMAGE_WIDTH: u32 = 640;
     const IMAGE_HEIGHT: u32 = 480;
     const ASPECT_RATIO: f32 = IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32;
-    const SAMPLES_PER_PIXEL: u32 = 100;
+    const SAMPLES_PER_PIXEL: u32 = 10;
     const MAX_DEPTH: u32 = 25;
 
     // World

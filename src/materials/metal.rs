@@ -3,9 +3,11 @@ use crate::materials::material::{Material, reflect_ray};
 use crate::geometry::vector::Vector3;
 use crate::geometry::ray::Ray;
 use crate::objects::hittable::HitRecord;
+use crate::utils::random_in_unit_sphere;
 
 pub struct Metal {
     pub color: Color,
+    pub(crate) fuzz: f32,
 }
 
 impl Material for Metal {
@@ -14,7 +16,7 @@ impl Material for Metal {
         let reflected_ray = reflect_ray(in_direction, normal);
         Ray {
             origin: hit_rec.intersection,
-            direction: reflected_ray,
+            direction: reflected_ray + self.fuzz * random_in_unit_sphere(),
         }
     }
 
