@@ -1,6 +1,7 @@
 use std::ops::{Add, Mul, AddAssign, MulAssign};
 use image::Rgb;
 
+#[derive(Clone, Copy)]
 pub struct Color {
     pub r: f32,
     pub g: f32,

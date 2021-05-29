@@ -1,10 +1,13 @@
 use crate::geometry::vector::{Point, Vector3};
-use crate::objects::hittable::{Hittable, HitRecord};
 use crate::geometry::ray::Ray;
+use crate::objects::hittable::{Hittable, HitRecord};
+use crate::materials::material::Material;
+use crate::geometry::color::Color;
 
 pub struct Sphere {
     pub center: Point,
     pub radius: f32,
+    pub material: Box<dyn Material>,
 }
 
 impl Hittable for Sphere {
@@ -35,5 +38,13 @@ impl Hittable for Sphere {
             return -normal;
         }
         return normal;
+    }
+
+    fn color(&self) -> Color {
+        self.material.color()
+    }
+
+    fn scatter(&self, in_direction: Vector3, hit_rec: HitRecord) -> Ray {
+        self.material.scatter(in_direction, hit_rec)
     }
 }
