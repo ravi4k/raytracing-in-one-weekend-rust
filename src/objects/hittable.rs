@@ -19,7 +19,7 @@ pub struct HittableList {
 }
 
 impl HittableList {
-    pub fn add(&mut self, object: Box<Hittable>) {
+    pub fn add(&mut self, object: Box<dyn Hittable>) {
         self.objects.push(object);
     }
 

@@ -1,5 +1,6 @@
 use crate::geometry::vector::{Point, Vector3};
 use crate::geometry::ray::Ray;
+use crate::utils::degrees_to_radians;
 
 pub struct Camera {
     pub position: Point,
@@ -9,16 +10,19 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new() -> Self {
-        let aspect_ratio = 16.0/9.0;
-        let viewport_height = 2.0;
+    pub fn new(look_from: Point, look_at: Point, v_up: Vector3, v_fov: f32, aspect_ratio: f32) -> Self {
+        let theta = degrees_to_radians(v_fov);
+        let viewport_height = 2.0 * (theta / 2.0).tan();
         let viewport_width = viewport_height * aspect_ratio;
-        let focal_length = 1.0;
 
-        let position = Point { x: 0.0, y: 0.0, z: 0.0 };
-        let horizontal = Vector3 { x: viewport_width, y: 0.0, z: 0.0};
-        let vertical = Vector3 { x: 0.0, y: viewport_height, z: 0.0};
-        let lower_left_corner = position - horizontal / 2.0 - vertical / 2.0 - Vector3 {x: 0.0, y: 0.0, z: focal_length};
+        let normal_in = (look_from - look_at).direction();
+        let horizontal_orientation = v_up.cross(normal_in).direction();
+        let vertical_orientation = normal_in.cross(horizontal_orientation);
+
+        let position = look_from;
+        let horizontal = viewport_width * horizontal_orientation;
+        let vertical = viewport_height * vertical_orientation;
+        let lower_left_corner = position - horizontal / 2.0 - vertical / 2.0 - normal_in;
 
         Camera {
             position,

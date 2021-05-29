@@ -7,7 +7,7 @@ pub const PI: f32 = std::f32::consts::PI;
 
 // Functions
 pub fn degrees_to_radians(degrees: f32) -> f32 {
-    return degrees * PI / 180.0;
+    degrees * PI / 180.0
 }
 
 pub fn random_f32() -> f32 {

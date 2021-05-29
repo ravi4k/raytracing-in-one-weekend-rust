@@ -6,7 +6,7 @@ use geometry::ray::Ray;
 use geometry::vector::{Point, Vector3};
 
 mod objects;
-use objects::hittable::{HitRecord, HittableList};
+use objects::hittable::HittableList;
 use objects::sphere::Sphere;
 
 mod world;
@@ -15,11 +15,11 @@ use world::camera::Camera;
 mod materials;
 use materials::lambertian::Lambertian;
 use materials::metal::Metal;
+use materials::dielectric::Dielectric;
 
 mod utils;
-use utils::{random_f32};
-use utils::{degrees_to_radians, INF_F32, PI};
-use crate::materials::dielectric::Dielectric;
+use utils::random_f32;
+use utils::INF_F32;
 
 fn ray_color(ray: Ray, world: &HittableList, depth: u32) -> Color {
     if depth == 0 {
@@ -46,6 +46,7 @@ fn scene() -> HittableList {
         objects: Vec::new(),
     };
 
+    // Ground
     world.add(Box::new(Sphere {
         center: Point {
             x: 0.0,
@@ -62,6 +63,7 @@ fn scene() -> HittableList {
         }),
     }));
 
+    // Spheres
     world.add(Box::new(Sphere {
         center: Point {
             x: 0.0,
@@ -96,7 +98,7 @@ fn scene() -> HittableList {
             y: 0.0,
             z: -1.0,
         },
-        radius: -0.4,
+        radius: -0.45,
         material: Box::new(Dielectric {
             refractive_index: 1.5,
         }),
@@ -124,17 +126,23 @@ fn scene() -> HittableList {
 
 fn main() {
     // Image
-    const IMAGE_WIDTH: u32 = 640;
-    const IMAGE_HEIGHT: u32 = 480;
+    const IMAGE_WIDTH: u32 = 1280;
+    const IMAGE_HEIGHT: u32 = 720;
     const ASPECT_RATIO: f32 = IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32;
-    const SAMPLES_PER_PIXEL: u32 = 10;
+    const SAMPLES_PER_PIXEL: u32 = 50;
     const MAX_DEPTH: u32 = 25;
 
     // World
-    let mut world = scene();
+    let world = scene();
 
     //Camera
-    let camera = Camera::new();
+    let camera = Camera::new(
+        Point { x: -2.0, y: 2.0, z: 1.0 },
+        Point { x: 0.0, y: 0.0, z: -1.0 },
+        Vector3 { x: 0.0, y: 1.0, z: 0.0 },
+        20.0,
+        ASPECT_RATIO,
+    );
 
     // Render
     let mut img_buf: RgbImage = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);

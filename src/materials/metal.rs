@@ -7,7 +7,7 @@ use crate::utils::random_in_unit_sphere;
 
 pub struct Metal {
     pub color: Color,
-    pub(crate) fuzz: f32,
+    pub fuzz: f32,
 }
 
 impl Material for Metal {

@@ -7,7 +7,7 @@ use crate::geometry::color::Color;
 pub struct Sphere {
     pub center: Point,
     pub radius: f32,
-    pub(crate) material: Box<dyn Material>,
+    pub material: Box<dyn Material>,
 }
 
 impl Hittable for Sphere {
