@@ -7,7 +7,7 @@ use geometry::vector::{Point, Vector3};
 
 mod objects;
 use objects::hittable::HittableList;
-use objects::sphere::Sphere;
+use objects::sphere::{Sphere, MovingSphere};
 
 mod world;
 use world::camera::Camera;
@@ -37,7 +37,7 @@ fn ray_color(ray: Ray, world: &HittableList, depth: u32) -> Color {
     let hit_rec = world.hit(&ray, 0.001, INF_F32);
     if hit_rec.object.is_some() {
         let color = hit_rec.object.unwrap().color();
-        let scattered = hit_rec.object.unwrap().scatter(ray.direction, hit_rec);
+        let scattered = hit_rec.object.unwrap().scatter(ray, hit_rec);
         return color * ray_color(scattered, world, depth - 1);
     }
 
@@ -76,12 +76,15 @@ fn scene() -> HittableList {
             if (center - Point { x: 4.0, y: 0.2, z: 0.0 }).length() > 0.9 {
                 if choose_mat < 0.8 {
                     let color = Color::random() * Color::random();
-                    world.add(Box::new(Sphere {
-                        center,
+                    world.add(Box::new(MovingSphere {
+                        centre0: center,
+                        center1: center + Vector3 {x: 0.0, y: random_f32() / 2.0, z: 0.0},
+                        time0: 0.0,
+                        time1: 1.0,
                         radius: 0.2,
                         material: Box::new(Lambertian {
                             color,
-                        })
+                        }),
                     }))
                 } else if choose_mat < 0.95 {
                     let color = 0.5 * Color::random() + Color { r: 0.5, g: 0.5, b: 0.5 } ;
@@ -176,10 +179,10 @@ fn process_block(mut block_info: ImageBlockInfo, image_blocks: Arc<Mutex<Vec<Ima
 
 fn main() {
     // Image
-    const IMAGE_WIDTH: u32 = 1200;
-    const IMAGE_HEIGHT: u32 = 800;
+    const IMAGE_WIDTH: u32 = 1280;
+    const IMAGE_HEIGHT: u32 = 720;
     const ASPECT_RATIO: f32 = IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32;
-    const SAMPLES_PER_PIXEL: u32 = 50;
+    const SAMPLES_PER_PIXEL: u32 = 25;
     const MAX_DEPTH: u32 = 50;
 
     // World
@@ -201,6 +204,8 @@ fn main() {
         ASPECT_RATIO,
         aperture,
         focus_dist,
+        0.0,
+        1.0,
     );
 
     // Render

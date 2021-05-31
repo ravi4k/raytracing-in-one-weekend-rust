@@ -4,9 +4,8 @@ use crate::geometry::color::Color;
 
 pub trait Hittable: Send + Sync {
     fn hit(&self, _ray: &Ray, _t_min: f32, _t_max: f32) -> f32;
-    fn normal(&self, _intersection: Point) -> Vector3;
     fn color(&self) -> Color;
-    fn scatter(&self, in_direction: Vector3, hit_rec: HitRecord) -> Ray;
+    fn scatter(&self, in_ray: Ray, hit_rec: HitRecord) -> Ray;
 }
 
 pub struct HitRecord<'a> {

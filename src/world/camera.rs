@@ -1,6 +1,6 @@
 use crate::geometry::vector::{Point, Vector3};
 use crate::geometry::ray::Ray;
-use crate::utils::{degrees_to_radians, random_in_unit_disk};
+use crate::utils::{random_f32_range, degrees_to_radians, random_in_unit_disk};
 
 #[derive(Clone)]
 pub struct Screen {
@@ -17,15 +17,17 @@ impl Screen {
 
 #[derive(Clone)]
 pub struct Camera {
-    pub position: Point,
-    pub horizontal_orientation: Vector3,
-    pub vertical_orientation: Vector3,
-    pub aperture: f32,
-    pub viewport: Screen,
+    position: Point,
+    horizontal_orientation: Vector3,
+    vertical_orientation: Vector3,
+    aperture: f32,
+    viewport: Screen,
+    time0: f32,
+    time1: f32,
 }
 
 impl Camera {
-    pub fn new(look_from: Point, look_at: Point, v_up: Vector3, v_fov: f32, aspect_ratio: f32, aperture: f32, focus_dist: f32) -> Self {
+    pub fn new(look_from: Point, look_at: Point, v_up: Vector3, v_fov: f32, aspect_ratio: f32, aperture: f32, focus_dist: f32, time0: f32, time1: f32) -> Self {
         let normal_in = (look_from - look_at).direction();
         let horizontal_orientation = v_up.cross(normal_in).direction();
         let vertical_orientation = normal_in.cross(horizontal_orientation);
@@ -38,6 +40,8 @@ impl Camera {
             vertical_orientation,
             aperture,
             viewport,
+            time0,
+            time1,
         }
     }
 
@@ -45,10 +49,12 @@ impl Camera {
         let rd = self.aperture * random_in_unit_disk();
         let offset = rd.x * self.horizontal_orientation + rd.y * self.vertical_orientation;
 
-        let ray_direction = (self.viewport.pixel_position(u, v) - (self.position + offset)).direction();
+        let ray_origin = self.position + offset;
+        let ray_direction = (self.viewport.pixel_position(u, v) - ray_origin).direction();
         Ray {
-            origin: self.position + offset,
+            origin: ray_origin,
             direction: ray_direction,
+            time: random_f32_range(self.time0, self.time1),
         }
     }
 

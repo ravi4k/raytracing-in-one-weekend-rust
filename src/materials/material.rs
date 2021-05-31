@@ -1,10 +1,10 @@
 use crate::objects::hittable::HitRecord;
 use crate::geometry::ray::Ray;
-use crate::geometry::vector::Vector3;
+use crate::geometry::vector::{Vector3, Point};
 use crate::geometry::color::Color;
 
 pub trait Material: Send + Sync {
-    fn scatter(&self, in_direction: Vector3, hit_rec: HitRecord) -> Ray;
+    fn scatter(&self, in_ray: Ray, intersection: Point, normal: Vector3) -> Ray;
     fn color(&self) -> Color;
 }
 

@@ -1,5 +1,5 @@
 use crate::geometry::color::Color;
-use crate::geometry::vector::Vector3;
+use crate::geometry::vector::{Vector3, Point};
 use crate::geometry::ray::Ray;
 use crate::objects::hittable::HitRecord;
 use crate::materials::material::Material;
@@ -9,15 +9,15 @@ pub struct Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, _in_direction: Vector3, hit_rec: HitRecord) -> Ray {
-        let normal = hit_rec.object.unwrap().normal(hit_rec.intersection);
+    fn scatter(&self, in_ray: Ray, intersection: Point, normal: Vector3) -> Ray {
         let mut scatter_direction = normal + Vector3::random_unit_vector();
         if scatter_direction.near_zero() {
             scatter_direction = normal;
         }
         Ray {
-            origin: hit_rec.intersection,
+            origin: intersection,
             direction: scatter_direction.direction(),
+            time: in_ray.time,
         }
     }
 
