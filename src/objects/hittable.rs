@@ -2,7 +2,7 @@ use crate::geometry::ray::Ray;
 use crate::geometry::vector::{Point, Vector3};
 use crate::geometry::color::Color;
 
-pub trait Hittable {
+pub trait Hittable: Send + Sync {
     fn hit(&self, _ray: &Ray, _t_min: f32, _t_max: f32) -> f32;
     fn normal(&self, _intersection: Point) -> Vector3;
     fn color(&self) -> Color;

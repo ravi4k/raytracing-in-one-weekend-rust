@@ -1,4 +1,4 @@
-use image::{ImageBuffer, RgbImage};
+use image::{ImageBuffer, RgbImage, Rgb};
 
 mod geometry;
 use geometry::color::Color;
@@ -18,10 +18,12 @@ use materials::metal::Metal;
 use materials::dielectric::Dielectric;
 
 mod utils;
-use utils::random_f32;
+use utils::{random_f32, random_f32_range};
 use utils::INF_F32;
-use crate::materials::material::Material;
-use crate::utils::random_f32_range;
+
+use std::thread;
+use std::sync::{Mutex, Arc};
+use std::borrow::Borrow;
 
 fn ray_color(ray: Ray, world: &HittableList, depth: u32) -> Color {
     if depth == 0 {
@@ -141,16 +143,47 @@ fn scene() -> HittableList {
     world
 }
 
+struct ImageBlockInfo {
+    start_row: u32,
+    end_row: u32,
+    image_height: u32,
+    image_width: u32,
+    spp: u32,
+    max_depth: u32,
+    image_block: Vec<Vec<Rgb<u8>>>,
+}
+
+fn process_block(mut block_info: ImageBlockInfo, image_blocks: Arc<Mutex<Vec<ImageBlockInfo>>>, camera: Camera, world: Arc<HittableList>) {
+    for j in block_info.start_row..block_info.end_row {
+        let mut row: Vec<Rgb<u8>> = Vec::with_capacity(block_info.image_width as usize) ;
+        for i in 0..block_info.image_width {
+            let mut pixel_color = Color { r: 0.0, g: 0.0, b: 0.0 };
+            for _ in 0..block_info.spp {
+                let u = (i as f32 + random_f32()) / (block_info.image_width - 1) as f32;
+                let v = (j as f32 + random_f32()) / (block_info.image_height - 1) as f32;
+
+                let ray = camera.get_ray(u, v);
+                pixel_color += ray_color(ray, &world, block_info.max_depth);
+            }
+            row.push(pixel_color.get_pixel(block_info.spp));
+        }
+        block_info.image_block.push(row);
+    }
+    
+    let mut image = image_blocks.lock().unwrap();
+    image.push(block_info);
+}
+
 fn main() {
     // Image
     const IMAGE_WIDTH: u32 = 1200;
     const IMAGE_HEIGHT: u32 = 800;
     const ASPECT_RATIO: f32 = IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32;
-    const SAMPLES_PER_PIXEL: u32 = 10;
-    const MAX_DEPTH: u32 = 25;
+    const SAMPLES_PER_PIXEL: u32 = 50;
+    const MAX_DEPTH: u32 = 50;
 
     // World
-    let world = scene();
+    let world = Arc::new(scene());
 
     //Camera
     let look_from = Point { x: 13.0, y: 2.0, z: 3.0 };
@@ -171,22 +204,48 @@ fn main() {
     );
 
     // Render
+    const NTHREADS: u32 = 10;
+    let mut threads: Vec<thread::JoinHandle<()>> = Vec::new();
+    let mut image_blocks: Arc<Mutex<Vec<ImageBlockInfo>>> = Arc::new(Mutex::new(Vec::new()));
+
+    let block_size = IMAGE_HEIGHT / NTHREADS;
+    let end_block_size = block_size + (IMAGE_HEIGHT % NTHREADS);
+
+    for i in 0..NTHREADS {
+        let block_info = ImageBlockInfo {
+            start_row: i * block_size,
+            end_row: i * block_size + ( if i == NTHREADS - 1 { end_block_size } else { block_size } ),
+            image_height: IMAGE_HEIGHT,
+            image_width: IMAGE_WIDTH,
+            spp: SAMPLES_PER_PIXEL,
+            max_depth: MAX_DEPTH,
+            image_block: Vec::with_capacity(block_size as usize),
+        };
+
+        let camera_new = camera.clone();
+        let image_blocks_new = image_blocks.clone();
+        let world_new = world.clone();
+
+        let handle = thread::spawn(|| {
+            process_block(block_info, image_blocks_new, camera_new, world_new);
+        });
+        threads.push(handle);
+    }
+
+    for thread in threads.into_iter() {
+        thread.join().unwrap();
+    }
+
+    let final_blocks = image_blocks.lock().unwrap();
     let mut img_buf: RgbImage = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
-    for j in (0..IMAGE_HEIGHT).rev() {
-        for i in 0..IMAGE_WIDTH {
-            let mut pixel_color = Color { r: 0.0, g: 0.0, b: 0.0 };
-            for _ in 0..SAMPLES_PER_PIXEL {
-                let u = (i as f32 + random_f32()) / (IMAGE_WIDTH - 1) as f32;
-                let v = (j as f32 + random_f32()) / (IMAGE_HEIGHT - 1) as f32;
-
-                let ray = camera.get_ray(u, v);
-                pixel_color += ray_color(ray, &world, MAX_DEPTH);
+    for block in final_blocks.iter() {
+        for y in 0..block.image_block.len() {
+            for x in 0..block.image_block[0].len() {
+                let u = x as u32;
+                let v = block.start_row + y as u32;
+                img_buf.put_pixel(u, v, block.image_block[y][x]);
             }
-            img_buf.put_pixel(
-                i, IMAGE_HEIGHT - 1 - j,
-                pixel_color.get_pixel(SAMPLES_PER_PIXEL),
-            );
         }
     }
     img_buf.save("render.png").unwrap();

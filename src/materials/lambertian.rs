@@ -9,7 +9,7 @@ pub struct Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, in_direction: Vector3, hit_rec: HitRecord) -> Ray {
+    fn scatter(&self, _in_direction: Vector3, hit_rec: HitRecord) -> Ray {
         let normal = hit_rec.object.unwrap().normal(hit_rec.intersection);
         let mut scatter_direction = normal + Vector3::random_unit_vector();
         if scatter_direction.near_zero() {
