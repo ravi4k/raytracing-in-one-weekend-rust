@@ -1,8 +1,9 @@
-use crate::geometry::vector::{Point, Vector3};
-use crate::geometry::ray::Ray;
-use crate::objects::hittable::{Hittable, HitRecord};
-use crate::materials::material::Material;
+use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
 use crate::geometry::color::Color;
+use crate::geometry::ray::Ray;
+use crate::geometry::vector::{Point, Vector3};
+use crate::materials::material::Material;
+use crate::objects::hittable::Hittable;
 
 pub struct Sphere {
     pub center: Point,
@@ -21,14 +22,14 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32 {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<f32> {
         let oc = ray.origin - self.center;
         let b = oc.dot(ray.direction);
         let c = oc.length_squared() - self.radius.powi(2);
 
         let mut discriminant = b.powi(2) - c;
         if discriminant < 0.0 {
-            return -1.0;
+            return Option::None;
         }
         discriminant = discriminant.sqrt();
 
@@ -36,22 +37,35 @@ impl Hittable for Sphere {
         if t < t_min || t > t_max {
             t = -b + discriminant;
             if t < t_min || t > t_max {
-                return -1.0;
+                return Option::None;
             }
         }
-        return t;
+        return Option::from(t);
+    }
+
+    fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AxisAlignedBoundingBox> {
+        let p = Point {x: self.radius, y: self.radius, z: self.radius};
+        Option::from(AxisAlignedBoundingBox {
+            minimum: self.center - p,
+            maximum: self.center + p,
+        })
     }
 
     fn color(&self) -> Color {
         self.material.color()
     }
 
-    fn scatter(&self, in_ray: Ray, hit_rec: HitRecord) -> Ray {
-        self.material.scatter(in_ray, hit_rec.intersection, self.normal(hit_rec.intersection))
+    fn scatter(&self, in_ray: Ray, intersection: Point) -> Ray {
+        let scattered_direction = self.material.scatter(in_ray.direction, self.normal(intersection));
+        Ray {
+            origin: intersection,
+            direction: scattered_direction,
+            time: in_ray.time,
+        }
     }
 }
 
-pub(crate) struct MovingSphere {
+pub struct MovingSphere {
     pub centre0: Point,
     pub center1: Point,
     pub time0: f32,
@@ -75,14 +89,14 @@ impl MovingSphere {
 }
 
 impl Hittable for MovingSphere {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> f32 {
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<f32> {
         let oc = ray.origin - self.center(ray.time);
         let b = oc.dot(ray.direction);
         let c = oc.length_squared() - self.radius.powi(2);
 
         let mut discriminant = b.powi(2) - c;
         if discriminant < 0.0 {
-            return -1.0;
+            return Option::None;
         }
         discriminant = discriminant.sqrt();
 
@@ -90,18 +104,37 @@ impl Hittable for MovingSphere {
         if t < t_min || t > t_max {
             t = -b + discriminant;
             if t < t_min || t > t_max {
-                return -1.0;
+                return Option::None;
             }
         }
-        return t;
+        return Option::from(t);
+    }
+
+    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AxisAlignedBoundingBox> {
+        let p = Point {x: self.radius, y: self.radius, z: self.radius};
+        let box0 = AxisAlignedBoundingBox {
+            minimum: self.center(t0) - p,
+            maximum: self.center(t0) + p,
+        };
+        let box1 = AxisAlignedBoundingBox {
+            minimum: self.center(t1) - p,
+            maximum: self.center(t1) + p,
+        };
+        Option::from(AxisAlignedBoundingBox::surrounding_box(box0, box1))
     }
 
     fn color(&self) -> Color {
         self.material.color()
     }
 
-    fn scatter(&self, in_ray: Ray, hit_rec: HitRecord) -> Ray {
-        let normal = self.normal(hit_rec.intersection, in_ray.time);
-        self.material.scatter(in_ray, hit_rec.intersection, normal)
+    fn scatter(&self, in_ray: Ray, intersection: Point) -> Ray {
+        let normal = self.normal(intersection, in_ray.time);
+        let scattered_direction = self.material.scatter(in_ray.direction, normal);
+        self.material.scatter(in_ray.direction, normal);
+        Ray {
+            origin: intersection,
+            direction: scattered_direction,
+            time: in_ray.time,
+        }
     }
 }

@@ -1,4 +1,4 @@
-use super::vector::{Vector3, Point};
+use super::vector::{Point, Vector3};
 
 pub struct Ray {
     pub origin: Point,

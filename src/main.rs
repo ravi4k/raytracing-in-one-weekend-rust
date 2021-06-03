@@ -1,31 +1,29 @@
-use image::{ImageBuffer, RgbImage, Rgb};
+use std::sync::{Arc, Mutex};
+use std::thread;
 
-mod geometry;
+use image::{ImageBuffer, Rgb, RgbImage};
+
 use geometry::color::Color;
 use geometry::ray::Ray;
 use geometry::vector::{Point, Vector3};
-
-mod objects;
-use objects::hittable::HittableList;
-use objects::sphere::{Sphere, MovingSphere};
-
-mod world;
-use world::camera::Camera;
-
-mod materials;
+use materials::dielectric::Dielectric;
 use materials::lambertian::Lambertian;
 use materials::metal::Metal;
-use materials::dielectric::Dielectric;
-
-mod utils;
+use objects::sphere::{MovingSphere, Sphere};
 use utils::{random_f32, random_f32_range};
 use utils::INF_F32;
+use world::camera::Camera;
 
-use std::thread;
-use std::sync::{Mutex, Arc};
-use std::borrow::Borrow;
+use crate::objects::bvh_node::{BVHNode, Node};
+use crate::objects::hittable::Hittable;
 
-fn ray_color(ray: Ray, world: &HittableList, depth: u32) -> Color {
+mod geometry;
+mod objects;
+mod world;
+mod materials;
+mod utils;
+
+fn ray_color(ray: Ray, world: Arc<dyn Node>, depth: u32) -> Color {
     if depth == 0 {
         return Color {
             r: 0.0,
@@ -34,10 +32,12 @@ fn ray_color(ray: Ray, world: &HittableList, depth: u32) -> Color {
         };
     }
 
-    let hit_rec = world.hit(&ray, 0.001, INF_F32);
-    if hit_rec.object.is_some() {
-        let color = hit_rec.object.unwrap().color();
-        let scattered = hit_rec.object.unwrap().scatter(ray, hit_rec);
+    let hit_rec = world.hit(&ray, 0.01, INF_F32);
+    if hit_rec.is_some() {
+        let rec = hit_rec.unwrap();
+        let object = rec.object;
+        let color = object.color();
+        let scattered = object.scatter(ray, rec.intersection);
         return color * ray_color(scattered, world, depth - 1);
     }
 
@@ -45,13 +45,11 @@ fn ray_color(ray: Ray, world: &HittableList, depth: u32) -> Color {
     (1.0 - t) * Color { r: 1.0, g: 1.0, b: 1.0, } + t * Color { r: 0.5, g: 0.7, b: 1.0, }
 }
 
-fn scene() -> HittableList {
-    let mut world = HittableList {
-        objects: Vec::new(),
-    };
+fn scene() -> Vec<Arc<dyn Hittable>> {
+    let mut world: Vec<Arc<dyn Hittable>> = Vec::new();
 
     // Ground
-    world.add(Box::new(Sphere {
+    world.push(Arc::new(Sphere {
         center: Point {
             x: 0.0,
             y: -1000.0,
@@ -76,9 +74,9 @@ fn scene() -> HittableList {
             if (center - Point { x: 4.0, y: 0.2, z: 0.0 }).length() > 0.9 {
                 if choose_mat < 0.8 {
                     let color = Color::random() * Color::random();
-                    world.add(Box::new(MovingSphere {
+                    world.push(Arc::new(MovingSphere {
                         centre0: center,
-                        center1: center + Vector3 {x: 0.0, y: random_f32() / 2.0, z: 0.0},
+                        center1: center + Vector3 {x: 0.0, y: random_f32() / 4.0, z: 0.0},
                         time0: 0.0,
                         time1: 1.0,
                         radius: 0.2,
@@ -89,7 +87,7 @@ fn scene() -> HittableList {
                 } else if choose_mat < 0.95 {
                     let color = 0.5 * Color::random() + Color { r: 0.5, g: 0.5, b: 0.5 } ;
                     let fuzz = random_f32_range(0.0, 0.5);
-                    world.add(Box::new(Sphere {
+                    world.push(Arc::new(Sphere {
                         center,
                         radius: 0.2,
                         material: Box::new(Metal {
@@ -98,7 +96,7 @@ fn scene() -> HittableList {
                         })
                     }))
                 } else {
-                    world.add(Box::new(Sphere {
+                    world.push(Arc::new(Sphere {
                         center,
                         radius: 0.2,
                         material: Box::new(Dielectric {
@@ -110,7 +108,7 @@ fn scene() -> HittableList {
         }
     }
 
-    world.add(Box::new(Sphere {
+    world.push(Arc::new(Sphere {
         center: Point {x: 0.0, y: 1.0, z: 0.0 },
         radius: 1.0,
         material: Box::new(Dielectric {
@@ -118,7 +116,7 @@ fn scene() -> HittableList {
         })
     }));
 
-    world.add(Box::new(Sphere {
+    world.push(Arc::new(Sphere {
         center: Point {x: -4.0, y: 1.0, z: 0.0 },
         radius: 1.0,
         material: Box::new(Lambertian {
@@ -130,7 +128,7 @@ fn scene() -> HittableList {
         })
     }));
 
-    world.add(Box::new(Sphere {
+    world.push(Arc::new(Sphere {
         center: Point {x: 4.0, y: 1.0, z: 0.0 },
         radius: 1.0,
         material: Box::new(Metal {
@@ -156,7 +154,7 @@ struct ImageBlockInfo {
     image_block: Vec<Vec<Rgb<u8>>>,
 }
 
-fn process_block(mut block_info: ImageBlockInfo, image_blocks: Arc<Mutex<Vec<ImageBlockInfo>>>, camera: Camera, world: Arc<HittableList>) {
+fn process_block(mut block_info: ImageBlockInfo, image_blocks: Arc<Mutex<Vec<ImageBlockInfo>>>, camera: Camera, world: Arc<dyn Node>) {
     for j in block_info.start_row..block_info.end_row {
         let mut row: Vec<Rgb<u8>> = Vec::with_capacity(block_info.image_width as usize) ;
         for i in 0..block_info.image_width {
@@ -166,7 +164,7 @@ fn process_block(mut block_info: ImageBlockInfo, image_blocks: Arc<Mutex<Vec<Ima
                 let v = (j as f32 + random_f32()) / (block_info.image_height - 1) as f32;
 
                 let ray = camera.get_ray(u, v);
-                pixel_color += ray_color(ray, &world, block_info.max_depth);
+                pixel_color += ray_color(ray, world.clone(), block_info.max_depth);
             }
             row.push(pixel_color.get_pixel(block_info.spp));
         }
@@ -179,14 +177,12 @@ fn process_block(mut block_info: ImageBlockInfo, image_blocks: Arc<Mutex<Vec<Ima
 
 fn main() {
     // Image
-    const IMAGE_WIDTH: u32 = 1280;
-    const IMAGE_HEIGHT: u32 = 720;
+    const IMAGE_WIDTH: u32 = 1200;
+    const IMAGE_HEIGHT: u32 = 800;
     const ASPECT_RATIO: f32 = IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32;
-    const SAMPLES_PER_PIXEL: u32 = 25;
+    const SAMPLES_PER_PIXEL: u32 = 10;
     const MAX_DEPTH: u32 = 50;
 
-    // World
-    let world = Arc::new(scene());
 
     //Camera
     let look_from = Point { x: 13.0, y: 2.0, z: 3.0 };
@@ -208,10 +204,15 @@ fn main() {
         1.0,
     );
 
+
+    // World
+    let world = BVHNode::create_tree(&mut scene(), 0.0, 1.0);
+
+
     // Render
-    const NTHREADS: u32 = 10;
+    const NTHREADS: u32 = 8;
     let mut threads: Vec<thread::JoinHandle<()>> = Vec::new();
-    let mut image_blocks: Arc<Mutex<Vec<ImageBlockInfo>>> = Arc::new(Mutex::new(Vec::new()));
+    let image_blocks: Arc<Mutex<Vec<ImageBlockInfo>>> = Arc::new(Mutex::new(Vec::new()));
 
     let block_size = IMAGE_HEIGHT / NTHREADS;
     let end_block_size = block_size + (IMAGE_HEIGHT % NTHREADS);

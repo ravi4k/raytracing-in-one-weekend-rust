@@ -1,6 +1,6 @@
-use crate::geometry::vector::{Point, Vector3};
 use crate::geometry::ray::Ray;
-use crate::utils::{random_f32_range, degrees_to_radians, random_in_unit_disk};
+use crate::geometry::vector::{Point, Vector3};
+use crate::utils::{degrees_to_radians, random_f32_range, random_in_unit_disk};
 
 #[derive(Clone)]
 pub struct Screen {

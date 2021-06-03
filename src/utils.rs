@@ -1,5 +1,6 @@
-use rand::{thread_rng, Rng};
-use crate::geometry::vector::{Vector3, Point};
+use rand::{Rng, thread_rng};
+
+use crate::geometry::vector::{Point, Vector3};
 
 // Constants
 pub const INF_F32: f32 = f32::MAX;
@@ -32,4 +33,8 @@ pub fn random_in_unit_disk() -> Point {
         y: distance * direction.y,
         z: 0.0,
     }
+}
+
+pub fn random_int(min: u32, max: u32) -> u32 {
+    thread_rng().gen_range(min..(max+1))
 }

@@ -1,42 +1,51 @@
-use crate::geometry::ray::Ray;
-use crate::geometry::vector::{Point, Vector3};
+use std::cmp::Ordering;
+use std::sync::Arc;
+
+use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
 use crate::geometry::color::Color;
+use crate::geometry::ray::Ray;
+use crate::geometry::vector::Point;
 
 pub trait Hittable: Send + Sync {
-    fn hit(&self, _ray: &Ray, _t_min: f32, _t_max: f32) -> f32;
+    fn hit(&self, _ray: &Ray, _t_min: f32, _t_max: f32) -> Option<f32>;
+    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AxisAlignedBoundingBox>;
     fn color(&self) -> Color;
-    fn scatter(&self, in_ray: Ray, hit_rec: HitRecord) -> Ray;
+    fn scatter(&self, in_ray: Ray, intersection: Point) -> Ray;
 }
 
-pub struct HitRecord<'a> {
-    pub object: Option<&'a Box<dyn Hittable>>,
+pub struct HitRecord {
+    pub object: Arc<dyn Hittable>,
     pub intersection: Point,
 }
 
-pub struct HittableList {
-    pub objects: Vec<Box<dyn Hittable>>,
+fn box_compare(_lhs: &Arc<dyn Hittable>, _rhs: &Arc<dyn Hittable>, axis: u32) -> bool {
+    let box_a = _lhs.bounding_box(0.0, 0.0);
+    let box_b = _rhs.bounding_box(0.0, 0.0);
+
+    match axis {
+        0 => box_a.unwrap().minimum.x < box_b.unwrap().minimum.x,
+        1 => box_a.unwrap().minimum.y < box_b.unwrap().minimum.y,
+        2 | _ =>  box_a.unwrap().minimum.z < box_b.unwrap().minimum.z,
+    }
 }
 
-impl HittableList {
-    pub fn add(&mut self, object: Box<dyn Hittable>) {
-        self.objects.push(object);
+pub fn box_cmp_x(_lhs: &Arc<dyn Hittable>, _rhs: &Arc<dyn Hittable>) -> Ordering {
+    if box_compare(_rhs, _rhs, 0) {
+        return Ordering::Less;
     }
+    return Ordering::Greater
+}
 
-    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> HitRecord {
-        let mut closest_distance: f32 = t_max;
-        let mut nearest_object: Option<&Box<dyn Hittable>> = Option::None;
-
-        for object in &self.objects {
-            let distance = object.hit(ray, t_min, t_max);
-            if distance > 0.0 && distance < closest_distance {
-                closest_distance = distance;
-                nearest_object = Option::from(object);
-            }
-        }
-
-        HitRecord {
-            object: nearest_object,
-            intersection: ray.at_distance(closest_distance),
-        }
+pub fn box_cmp_y(_lhs: &Arc<dyn Hittable>, _rhs: &Arc<dyn Hittable>) -> Ordering {
+    if box_compare(_rhs, _rhs, 1) {
+        return Ordering::Less
     }
+    return Ordering::Greater
+}
+
+pub fn box_cmp_z(_lhs: &Arc<dyn Hittable>, _rhs: &Arc<dyn Hittable>) -> Ordering {
+    if box_compare(_rhs, _rhs, 2) {
+        return Ordering::Less;
+    }
+    return Ordering::Greater
 }
