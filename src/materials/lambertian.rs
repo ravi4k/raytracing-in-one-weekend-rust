@@ -1,9 +1,11 @@
 use crate::geometry::color::Color;
-use crate::geometry::vector::Vector3;
+use crate::geometry::vector::{Vector3, Point};
 use crate::materials::material::Material;
+use crate::textures::texture::Texture;
+use std::sync::Arc;
 
 pub struct Lambertian {
-    pub color: Color,
+    pub albedo: Arc<dyn Texture>,
 }
 
 impl Material for Lambertian {
@@ -15,7 +17,7 @@ impl Material for Lambertian {
         scatter_direction.direction()
     }
 
-    fn color(&self) -> Color {
-        self.color
+    fn color(&self, u: f32, v: f32, intersection: Point) -> Color {
+        self.albedo.color(u, v, intersection)
     }
 }

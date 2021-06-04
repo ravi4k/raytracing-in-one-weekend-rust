@@ -1,5 +1,5 @@
 use crate::geometry::color::Color;
-use crate::geometry::vector::Vector3;
+use crate::geometry::vector::{Vector3, Point};
 use crate::materials::material::{Material, reflect_ray};
 use crate::utils::random_in_unit_sphere;
 
@@ -14,7 +14,7 @@ impl Material for Metal {
         reflected_ray + self.fuzz * random_in_unit_sphere()
     }
 
-    fn color(&self) -> Color {
+    fn color(&self, _u: f32, _v: f32, _intersection: Point) -> Color {
         self.color
     }
 }

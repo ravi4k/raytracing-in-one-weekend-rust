@@ -16,12 +16,15 @@ use world::camera::Camera;
 
 use crate::objects::bvh_node::{BVHNode, Node};
 use crate::objects::hittable::Hittable;
+use crate::textures::checkered::CheckeredTexture;
+use crate::textures::solid::SolidColor;
 
 mod geometry;
 mod objects;
 mod world;
 mod materials;
 mod utils;
+mod textures;
 
 fn ray_color(ray: Ray, world: Arc<dyn Node>, depth: u32) -> Color {
     if depth == 0 {
@@ -36,7 +39,7 @@ fn ray_color(ray: Ray, world: Arc<dyn Node>, depth: u32) -> Color {
     if hit_rec.is_some() {
         let rec = hit_rec.unwrap();
         let object = rec.object;
-        let color = object.color();
+        let color = object.color(rec.intersection);
         let scattered = object.scatter(ray, rec.intersection);
         return color * ray_color(scattered, world, depth - 1);
     }
@@ -56,12 +59,15 @@ fn scene() -> Vec<Arc<dyn Hittable>> {
             z: 0.0,
         },
         radius: 1000.0,
-        material: Box::new(Lambertian {
-            color: Color {
-                r: 0.5,
-                g: 0.5,
-                b: 0.5,
-            }
+        material: Arc::new(Lambertian {
+            albedo: Arc::new(CheckeredTexture {
+                even: Arc::new(SolidColor {
+                    color: Color { r: 0.2, g: 0.3, b: 0.1 }
+                }),
+                odd: Arc::new(SolidColor {
+                    color: Color { r: 0.9, g: 0.9, b: 0.9 }
+                }),
+            }),
         }),
     }));
 
@@ -80,8 +86,10 @@ fn scene() -> Vec<Arc<dyn Hittable>> {
                         time0: 0.0,
                         time1: 1.0,
                         radius: 0.2,
-                        material: Box::new(Lambertian {
-                            color,
+                        material: Arc::new(Lambertian {
+                            albedo: Arc::new(SolidColor {
+                                color,
+                            }),
                         }),
                     }))
                 } else if choose_mat < 0.95 {
@@ -90,7 +98,7 @@ fn scene() -> Vec<Arc<dyn Hittable>> {
                     world.push(Arc::new(Sphere {
                         center,
                         radius: 0.2,
-                        material: Box::new(Metal {
+                        material: Arc::new(Metal {
                             color,
                             fuzz,
                         })
@@ -99,7 +107,7 @@ fn scene() -> Vec<Arc<dyn Hittable>> {
                     world.push(Arc::new(Sphere {
                         center,
                         radius: 0.2,
-                        material: Box::new(Dielectric {
+                        material: Arc::new(Dielectric {
                             refractive_index: 1.5,
                         })
                     }));
@@ -111,7 +119,7 @@ fn scene() -> Vec<Arc<dyn Hittable>> {
     world.push(Arc::new(Sphere {
         center: Point {x: 0.0, y: 1.0, z: 0.0 },
         radius: 1.0,
-        material: Box::new(Dielectric {
+        material: Arc::new(Dielectric {
             refractive_index: 1.5,
         })
     }));
@@ -119,19 +127,21 @@ fn scene() -> Vec<Arc<dyn Hittable>> {
     world.push(Arc::new(Sphere {
         center: Point {x: -4.0, y: 1.0, z: 0.0 },
         radius: 1.0,
-        material: Box::new(Lambertian {
-            color: Color {
-                r: 0.4,
-                g: 0.2,
-                b: 0.1
-            }
-        })
+        material: Arc::new(Lambertian {
+            albedo: Arc::new(SolidColor {
+                color: Color {
+                    r: 0.4,
+                    g: 0.2,
+                    b: 0.1,
+                }
+            }),
+        }),
     }));
 
     world.push(Arc::new(Sphere {
         center: Point {x: 4.0, y: 1.0, z: 0.0 },
         radius: 1.0,
-        material: Box::new(Metal {
+        material: Arc::new(Metal {
             color: Color {
                 r: 0.7,
                 g: 0.6,
@@ -180,7 +190,7 @@ fn main() {
     const IMAGE_WIDTH: u32 = 1200;
     const IMAGE_HEIGHT: u32 = 800;
     const ASPECT_RATIO: f32 = IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32;
-    const SAMPLES_PER_PIXEL: u32 = 10;
+    const SAMPLES_PER_PIXEL: u32 = 100;
     const MAX_DEPTH: u32 = 50;
 
 
@@ -189,7 +199,7 @@ fn main() {
     let look_at = Point { x: 0.0, y: 0.0, z: 0.0 };
     let v_up = Vector3 { x: 0.0, y: 1.0, z: 0.0 };
     let v_fov = 20.0;
-    let aperture = 0.1;
+    let aperture = 0.0;
     let focus_dist = 10.0;
 
     let camera = Camera::new(

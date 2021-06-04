@@ -1,9 +1,9 @@
 use crate::geometry::color::Color;
-use crate::geometry::vector::Vector3;
+use crate::geometry::vector::{Vector3, Point};
 
 pub trait Material: Send + Sync {
     fn scatter(&self, in_direction: Vector3, normal: Vector3) -> Vector3;
-    fn color(&self) -> Color;
+    fn color(&self, u: f32, v: f32, intersection: Point) -> Color;
 }
 
 pub fn is_front_face(in_direction: Vector3, normal: Vector3) -> bool {

@@ -4,11 +4,13 @@ use crate::geometry::ray::Ray;
 use crate::geometry::vector::{Point, Vector3};
 use crate::materials::material::Material;
 use crate::objects::hittable::Hittable;
+use crate::utils::PI;
+use std::sync::Arc;
 
 pub struct Sphere {
     pub center: Point,
     pub radius: f32,
-    pub material: Box<dyn Material>,
+    pub material: Arc<dyn Material>,
 }
 
 impl Sphere {
@@ -18,6 +20,15 @@ impl Sphere {
             return -normal;
         }
         return normal;
+    }
+
+    fn get_sphere_uv(point: Point) -> (f32, f32) {
+        let theta = (-(point.y)).acos();
+        let phi = (-(point.z)).atan2(point.x);
+
+        let u = phi / (2.0 * PI);
+        let v = theta / PI;
+        return (u, v);
     }
 }
 
@@ -51,8 +62,9 @@ impl Hittable for Sphere {
         })
     }
 
-    fn color(&self) -> Color {
-        self.material.color()
+    fn color(&self, intersection: Point) -> Color {
+        let (u, v) = Self::get_sphere_uv(self.normal(intersection));
+        self.material.color(u, v, intersection)
     }
 
     fn scatter(&self, in_ray: Ray, intersection: Point) -> Ray {
@@ -71,7 +83,7 @@ pub struct MovingSphere {
     pub time0: f32,
     pub time1: f32,
     pub radius: f32,
-    pub material: Box<dyn Material>,
+    pub material: Arc<dyn Material>,
 }
 
 impl MovingSphere {
@@ -123,8 +135,9 @@ impl Hittable for MovingSphere {
         Option::from(AxisAlignedBoundingBox::surrounding_box(box0, box1))
     }
 
-    fn color(&self) -> Color {
-        self.material.color()
+    fn color(&self, intersection: Point) -> Color {
+        let (u, v) = Sphere::get_sphere_uv(self.normal(intersection, 0.0));
+        self.material.color(u, v, intersection)
     }
 
     fn scatter(&self, in_ray: Ray, intersection: Point) -> Ray {

@@ -35,7 +35,7 @@ impl BVHNode {
             });
         }
 
-        objects.sort_by(|a, b| comparator(a, b));
+        objects.sort_unstable_by(|a, b| comparator(a, b));
         let mid_idx = objects.len() / 2;
         let left_node = Self::create_tree(&mut objects[..mid_idx], time0, time1);
         let right_node = Self::create_tree(&mut objects[mid_idx..], time0, time1);

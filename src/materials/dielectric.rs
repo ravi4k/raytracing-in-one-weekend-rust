@@ -1,5 +1,5 @@
 use crate::geometry::color::Color;
-use crate::geometry::vector::Vector3;
+use crate::geometry::vector::{Vector3, Point};
 use crate::materials::material::{is_front_face, Material, reflect_ray, reflectance_schlick, refract};
 use crate::utils::random_f32;
 
@@ -29,7 +29,7 @@ impl Material for Dielectric {
         refract(in_direction, normal, ir)
     }
 
-    fn color(&self) -> Color {
+    fn color(&self, _u: f32, _v: f32, _intersection: Point) -> Color {
         Color { r: 1.0, g: 1.0, b: 1.0 }
     }
 }

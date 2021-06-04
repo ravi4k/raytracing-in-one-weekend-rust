@@ -9,7 +9,7 @@ use crate::geometry::vector::Point;
 pub trait Hittable: Send + Sync {
     fn hit(&self, _ray: &Ray, _t_min: f32, _t_max: f32) -> Option<f32>;
     fn bounding_box(&self, t0: f32, t1: f32) -> Option<AxisAlignedBoundingBox>;
-    fn color(&self) -> Color;
+    fn color(&self, intersection: Point) -> Color;
     fn scatter(&self, in_ray: Ray, intersection: Point) -> Ray;
 }
 
