@@ -14,8 +14,8 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    fn normal(&self, _intersection: Point) -> Vector3 {
-        let normal = (_intersection - self.center).direction();
+    fn normal(&self, intersection: Point) -> Vector3 {
+        let normal = (intersection - self.center).direction();
         if self.radius < 0.0 {
             return -normal;
         }

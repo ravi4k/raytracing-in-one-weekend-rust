@@ -3,7 +3,7 @@ use crate::textures::texture::Texture;
 use crate::geometry::vector::Point;
 
 pub struct SolidColor {
-    pub(crate) color: Color,
+    pub color: Color,
 }
 
 impl Texture for SolidColor {

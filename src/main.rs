@@ -6,18 +6,14 @@ use image::{ImageBuffer, Rgb, RgbImage};
 use geometry::color::Color;
 use geometry::ray::Ray;
 use geometry::vector::{Point, Vector3};
-use materials::dielectric::Dielectric;
-use materials::lambertian::Lambertian;
-use materials::metal::Metal;
-use objects::sphere::{MovingSphere, Sphere};
-use utils::{random_f32, random_f32_range};
-use utils::INF_F32;
-use world::camera::Camera;
 
+use utils::random_f32;
+use utils::INF_F32;
+
+use world::camera::Camera;
+use scenes::random_spheres;
 use crate::objects::bvh_node::{BVHNode, Node};
-use crate::objects::hittable::Hittable;
-use crate::textures::checkered::CheckeredTexture;
-use crate::textures::solid::SolidColor;
+use crate::scenes::{two_checkered_spheres, two_perlin_spheres};
 
 mod geometry;
 mod objects;
@@ -25,6 +21,7 @@ mod world;
 mod materials;
 mod utils;
 mod textures;
+mod scenes;
 
 fn ray_color(ray: Ray, world: Arc<dyn Node>, depth: u32) -> Color {
     if depth == 0 {
@@ -46,112 +43,6 @@ fn ray_color(ray: Ray, world: Arc<dyn Node>, depth: u32) -> Color {
 
     let t = 0.5 * (ray.direction.y + 1.0);
     (1.0 - t) * Color { r: 1.0, g: 1.0, b: 1.0, } + t * Color { r: 0.5, g: 0.7, b: 1.0, }
-}
-
-fn scene() -> Vec<Arc<dyn Hittable>> {
-    let mut world: Vec<Arc<dyn Hittable>> = Vec::new();
-
-    // Ground
-    world.push(Arc::new(Sphere {
-        center: Point {
-            x: 0.0,
-            y: -1000.0,
-            z: 0.0,
-        },
-        radius: 1000.0,
-        material: Arc::new(Lambertian {
-            albedo: Arc::new(CheckeredTexture {
-                even: Arc::new(SolidColor {
-                    color: Color { r: 0.2, g: 0.3, b: 0.1 }
-                }),
-                odd: Arc::new(SolidColor {
-                    color: Color { r: 0.9, g: 0.9, b: 0.9 }
-                }),
-            }),
-        }),
-    }));
-
-    // Spheres
-    for a in -11..11 {
-        for b in -11..11 {
-            let choose_mat = random_f32();
-            let center = Point { x: a as f32 + 0.9 * random_f32(), y: 0.2, z: b as f32 + 0.9 * random_f32() };
-
-            if (center - Point { x: 4.0, y: 0.2, z: 0.0 }).length() > 0.9 {
-                if choose_mat < 0.8 {
-                    let color = Color::random() * Color::random();
-                    world.push(Arc::new(MovingSphere {
-                        centre0: center,
-                        center1: center + Vector3 {x: 0.0, y: random_f32() / 4.0, z: 0.0},
-                        time0: 0.0,
-                        time1: 1.0,
-                        radius: 0.2,
-                        material: Arc::new(Lambertian {
-                            albedo: Arc::new(SolidColor {
-                                color,
-                            }),
-                        }),
-                    }))
-                } else if choose_mat < 0.95 {
-                    let color = 0.5 * Color::random() + Color { r: 0.5, g: 0.5, b: 0.5 } ;
-                    let fuzz = random_f32_range(0.0, 0.5);
-                    world.push(Arc::new(Sphere {
-                        center,
-                        radius: 0.2,
-                        material: Arc::new(Metal {
-                            color,
-                            fuzz,
-                        })
-                    }))
-                } else {
-                    world.push(Arc::new(Sphere {
-                        center,
-                        radius: 0.2,
-                        material: Arc::new(Dielectric {
-                            refractive_index: 1.5,
-                        })
-                    }));
-                }
-            }
-        }
-    }
-
-    world.push(Arc::new(Sphere {
-        center: Point {x: 0.0, y: 1.0, z: 0.0 },
-        radius: 1.0,
-        material: Arc::new(Dielectric {
-            refractive_index: 1.5,
-        })
-    }));
-
-    world.push(Arc::new(Sphere {
-        center: Point {x: -4.0, y: 1.0, z: 0.0 },
-        radius: 1.0,
-        material: Arc::new(Lambertian {
-            albedo: Arc::new(SolidColor {
-                color: Color {
-                    r: 0.4,
-                    g: 0.2,
-                    b: 0.1,
-                }
-            }),
-        }),
-    }));
-
-    world.push(Arc::new(Sphere {
-        center: Point {x: 4.0, y: 1.0, z: 0.0 },
-        radius: 1.0,
-        material: Arc::new(Metal {
-            color: Color {
-                r: 0.7,
-                g: 0.6,
-                b: 0.5
-            },
-            fuzz: 0.0,
-        })
-    }));
-
-    world
 }
 
 struct ImageBlockInfo {
@@ -190,7 +81,7 @@ fn main() {
     const IMAGE_WIDTH: u32 = 1200;
     const IMAGE_HEIGHT: u32 = 800;
     const ASPECT_RATIO: f32 = IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32;
-    const SAMPLES_PER_PIXEL: u32 = 100;
+    const SAMPLES_PER_PIXEL: u32 = 50;
     const MAX_DEPTH: u32 = 50;
 
 
@@ -216,7 +107,8 @@ fn main() {
 
 
     // World
-    let world = BVHNode::create_tree(&mut scene(), 0.0, 1.0);
+    let mut world = two_perlin_spheres();
+    let world = BVHNode::create_tree(&mut world, 0.0, 1.0);
 
 
     // Render
