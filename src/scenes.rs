@@ -10,6 +10,61 @@ use crate::utils::{random_f32, random_f32_range};
 use crate::materials::dielectric::Dielectric;
 use crate::materials::metal::Metal;
 use crate::textures::perlin::{NoiseTexture, Perlin};
+use crate::textures::image::ImageTexture;
+use crate::materials::light::DiffuseLight;
+use crate::objects::rectangle::XYRect;
+
+pub fn simple_light() -> Vec<Arc<dyn Hittable>> {
+    let mut world: Vec<Arc<dyn Hittable>> = Vec::new();
+
+    let perlin_material = Arc::new(Lambertian {
+        albedo: Arc::new(NoiseTexture {
+            noise: Perlin::new(),
+            scale: 4.0,
+        })
+    });
+    world.push(Arc::new(Sphere {
+        center: Point { x: 0.0, y: -1000.0, z: 0.0 },
+        radius: 1000.0,
+        material: perlin_material.clone(),
+    }));
+    world.push(Arc::new(Sphere {
+        center: Point { x: 0.0, y: 2.0, z: 0.0 },
+        radius: 2.0,
+        material: perlin_material,
+    }));
+
+    let diffuse_light = Arc::new(DiffuseLight {
+        emit: Arc::new(SolidColor {
+            color: Color { r: 4.0, g: 4.0, b: 4.0 }
+        })
+    });
+    world.push(Arc::new(XYRect {
+        x: (3.0, 5.0),
+        y: (1.0, 3.0),
+        k: -2.0,
+        material: diffuse_light,
+    }));
+
+    return world;
+}
+
+pub fn earth() -> Vec<Arc<dyn Hittable>> {
+    let mut world: Vec<Arc<dyn Hittable>> = Vec::new();
+
+    let earth_texture = Arc::new(ImageTexture::new(String::from("/home/ravi/CLionProjects/RayTracer/src/earthmap.jpg")));
+    let earth_surface = Arc::new(Lambertian {
+        albedo: earth_texture,
+    });
+    let globe = Arc::new(Sphere {
+        center: Point { x: 0.0, y: 0.0, z: 0.0 },
+        radius: 2.0,
+        material: earth_surface,
+    });
+    world.push(globe);
+
+    return world;
+}
 
 pub fn random_spheres() -> Vec<Arc<dyn Hittable>> {
     let mut world: Vec<Arc<dyn Hittable>> = Vec::new();

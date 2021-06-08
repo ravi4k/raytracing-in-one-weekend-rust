@@ -24,7 +24,7 @@ impl Sphere {
 
     fn get_sphere_uv(point: Point) -> (f32, f32) {
         let theta = (-(point.y)).acos();
-        let phi = (-(point.z)).atan2(point.x);
+        let phi = (-(point.z)).atan2(point.x) + PI;
 
         let u = phi / (2.0 * PI);
         let v = theta / PI;
@@ -67,13 +67,23 @@ impl Hittable for Sphere {
         self.material.color(u, v, intersection)
     }
 
-    fn scatter(&self, in_ray: Ray, intersection: Point) -> Ray {
+    fn scatter(&self, in_ray: Ray, intersection: Point) -> Option<Ray> {
         let scattered_direction = self.material.scatter(in_ray.direction, self.normal(intersection));
-        Ray {
-            origin: intersection,
-            direction: scattered_direction,
-            time: in_ray.time,
+
+        if scattered_direction.is_none() {
+            return Option::None;
         }
+
+        return Option::from(Ray {
+            origin: intersection,
+            direction: scattered_direction.unwrap(),
+            time: in_ray.time,
+        });
+    }
+
+    fn emitted(&self, intersection: Point) -> Color {
+        let (u, v) = Self::get_sphere_uv(self.normal(intersection));
+        return self.material.emitted(u, v, intersection);
     }
 }
 
@@ -137,17 +147,26 @@ impl Hittable for MovingSphere {
 
     fn color(&self, intersection: Point) -> Color {
         let (u, v) = Sphere::get_sphere_uv(self.normal(intersection, 0.0));
-        self.material.color(u, v, intersection)
+        return self.material.color(u, v, intersection);
     }
 
-    fn scatter(&self, in_ray: Ray, intersection: Point) -> Ray {
+    fn scatter(&self, in_ray: Ray, intersection: Point) -> Option<Ray> {
         let normal = self.normal(intersection, in_ray.time);
         let scattered_direction = self.material.scatter(in_ray.direction, normal);
-        self.material.scatter(in_ray.direction, normal);
-        Ray {
-            origin: intersection,
-            direction: scattered_direction,
-            time: in_ray.time,
+
+        if scattered_direction.is_none() {
+            return Option::None;
         }
+
+        return Option::from(Ray {
+            origin: intersection,
+            direction: scattered_direction.unwrap(),
+            time: in_ray.time,
+        });
+    }
+
+    fn emitted(&self, intersection: Point) -> Color {
+        let (u, v) = Sphere::get_sphere_uv(self.normal(intersection, 0.0));
+        return self.material.emitted(u, v, intersection);
     }
 }

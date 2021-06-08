@@ -9,9 +9,9 @@ pub struct Metal {
 }
 
 impl Material for Metal {
-    fn scatter(&self, in_direction: Vector3, normal: Vector3) -> Vector3 {
+    fn scatter(&self, in_direction: Vector3, normal: Vector3) -> Option<Vector3> {
         let reflected_ray = reflect_ray(in_direction, normal);
-        reflected_ray + self.fuzz * random_in_unit_sphere()
+        return Option::from((reflected_ray + self.fuzz * random_in_unit_sphere()).direction());
     }
 
     fn color(&self, _u: f32, _v: f32, _intersection: Point) -> Color {

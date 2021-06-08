@@ -9,12 +9,12 @@ pub struct Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, _in_direction: Vector3, normal: Vector3) -> Vector3 {
+    fn scatter(&self, _in_direction: Vector3, normal: Vector3) -> Option<Vector3> {
         let mut scatter_direction = normal + Vector3::random_unit_vector();
         if scatter_direction.near_zero() {
             scatter_direction = normal;
         }
-        scatter_direction.direction()
+        return Option::from(scatter_direction.direction());
     }
 
     fn color(&self, u: f32, v: f32, intersection: Point) -> Color {

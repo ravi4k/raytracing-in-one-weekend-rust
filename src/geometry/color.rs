@@ -18,16 +18,16 @@ fn clamp(x: f32, min: f32, max: f32) -> f32 {
     if x > max {
         return max;
     }
-    x
+    return x;
 }
 
 impl Color {
     pub fn get_pixel(&self, spp: u32) -> image::Rgb<u8> {
-        let ir = (255.999 * clamp(self.r / spp as f32, 0.0, 1.0).sqrt()) as u8;
-        let ig = (255.999 * clamp(self.g / spp as f32, 0.0, 1.0).sqrt()) as u8;
-        let ib = (255.999 * clamp(self.b / spp as f32, 0.0, 1.0).sqrt()) as u8;
+        let ir = (255.999 * (self.r / spp as f32).sqrt().clamp(0.0, 1.0)) as u8;
+        let ig = (255.999 * (self.g / spp as f32).sqrt().clamp(0.0, 1.0)) as u8;
+        let ib = (255.999 * (self.b / spp as f32).sqrt().clamp(0.0, 1.0)) as u8;
 
-        Rgb([ir, ig, ib])
+        return Rgb([ir, ig, ib]);
     }
 
     pub fn random() -> Self {

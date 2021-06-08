@@ -1,7 +1,7 @@
 use crate::textures::texture::Texture;
 use crate::geometry::color::Color;
 use crate::geometry::vector::{Point, Vector3};
-use crate::utils::{random_f32, random_int, random_f32_range};
+use crate::utils::random_int;
 
 pub struct Perlin {
     ran_vec: Vec<Vector3>,
@@ -16,11 +16,7 @@ impl Perlin {
     pub fn new() -> Self {
         let mut ran_vec: Vec<Vector3> = Vec::with_capacity(Self::POINT_COUNT);
         for _i in 0..Self::POINT_COUNT {
-            ran_vec.push(Vector3 {
-                x: random_f32_range(-1.0, 1.0),
-                y: random_f32_range(-1.0, 1.0),
-                z: random_f32_range(-1.0, 1.0),
-            });
+            ran_vec.push(Vector3::random_unit_vector() );
         }
 
         let perm_x = Self::perlin_generate_perm();
@@ -36,9 +32,9 @@ impl Perlin {
     }
 
     pub fn noise(&self, point: Point) -> f32 {
-        let u = (point.x - point.x.floor());
-        let v = (point.y - point.y.floor());
-        let w = (point.z - point.z.floor());
+        let u = point.x - point.x.floor();
+        let v = point.y - point.y.floor();
+        let w = point.z - point.z.floor();
 
         let i = point.x.floor() as i32;
         let j = point.y.floor() as i32;
@@ -95,7 +91,7 @@ impl Perlin {
         let mut temp_p = point;
         let mut weight: f32 = 1.0;
 
-        for i in 0..depth {
+        for _i in 0..depth {
             accum += weight * self.noise(temp_p);
             weight *= 0.5;
             temp_p = 2.0 * temp_p;
