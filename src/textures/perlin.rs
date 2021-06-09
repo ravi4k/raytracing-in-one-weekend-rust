@@ -124,6 +124,6 @@ pub struct NoiseTexture {
 
 impl Texture for NoiseTexture {
     fn color(&self, _u: f32, _v: f32, point: Point) -> Color {
-        return 0.5 * (1.0 + (self.scale * point.z + 10.0 * self.noise.turb(point, 7)).sin()) * Color { r: 1.0, g: 1.0, b: 1.0 };
+        return 0.5 * (1.0 + (self.scale * point.z + 10.0 * self.noise.turb(point, 7)).sin()) * Color::WHITE;
     }
 }

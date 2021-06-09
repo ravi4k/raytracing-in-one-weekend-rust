@@ -9,7 +9,7 @@ pub struct Metal {
 }
 
 impl Material for Metal {
-    fn scatter(&self, in_direction: Vector3, normal: Vector3) -> Option<Vector3> {
+    fn scatter(&self, in_direction: Vector3, normal: Vector3, _front_face: bool) -> Option<Vector3> {
         let reflected_ray = reflect_ray(in_direction, normal);
         return Option::from((reflected_ray + self.fuzz * random_in_unit_sphere()).direction());
     }

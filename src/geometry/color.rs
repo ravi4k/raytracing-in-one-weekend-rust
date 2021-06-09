@@ -11,16 +11,6 @@ pub struct Color {
     pub b: f32,
 }
 
-fn clamp(x: f32, min: f32, max: f32) -> f32 {
-    if x < min {
-        return min;
-    }
-    if x > max {
-        return max;
-    }
-    return x;
-}
-
 impl Color {
     pub fn get_pixel(&self, spp: u32) -> image::Rgb<u8> {
         let ir = (255.999 * (self.r / spp as f32).sqrt().clamp(0.0, 1.0)) as u8;
@@ -37,6 +27,18 @@ impl Color {
             b: random_f32(),
         }
     }
+
+    pub const WHITE: Color = Color {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+    };
+
+    pub const BLACK: Color = Color {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+    };
 }
 
 impl Add for Color {

@@ -9,7 +9,7 @@ pub struct DiffuseLight {
 }
 
 impl Material for DiffuseLight {
-    fn scatter(&self, _in_direction: Vector3, _normal: Vector3) -> Option<Vector3> {
+    fn scatter(&self, _in_direction: Vector3, _normal: Vector3, _front_face: bool) -> Option<Vector3> {
         return Option::None;
     }
 

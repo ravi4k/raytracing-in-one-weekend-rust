@@ -11,6 +11,12 @@ pub struct Vector3 {
 }
 
 impl Vector3 {
+    const ORIGIN: Point = Point {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+    };
+
     pub fn direction(self) -> Self {
         (1.0 / self.length()) * self
     }

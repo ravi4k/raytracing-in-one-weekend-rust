@@ -4,7 +4,7 @@ use crate::geometry::ray::Ray;
 use crate::geometry::vector::{Point, Vector3};
 use crate::materials::material::Material;
 use crate::objects::hittable::Hittable;
-use crate::utils::PI;
+use crate::utils::{PI, is_front_face};
 use std::sync::Arc;
 
 pub struct Sphere {
@@ -68,8 +68,13 @@ impl Hittable for Sphere {
     }
 
     fn scatter(&self, in_ray: Ray, intersection: Point) -> Option<Ray> {
-        let scattered_direction = self.material.scatter(in_ray.direction, self.normal(intersection));
+        let mut normal = self.normal(intersection);
+        let is_front_face: bool = is_front_face(in_ray.direction, normal);
+        if !is_front_face {
+            normal = -normal;
+        }
 
+        let scattered_direction = self.material.scatter(in_ray.direction, normal, is_front_face);
         if scattered_direction.is_none() {
             return Option::None;
         }
@@ -151,13 +156,16 @@ impl Hittable for MovingSphere {
     }
 
     fn scatter(&self, in_ray: Ray, intersection: Point) -> Option<Ray> {
-        let normal = self.normal(intersection, in_ray.time);
-        let scattered_direction = self.material.scatter(in_ray.direction, normal);
+        let mut normal = self.normal(intersection, in_ray.time);
+        let is_front_face: bool = is_front_face(in_ray.direction, normal);
+        if !is_front_face {
+            normal = -normal;
+        }
 
+        let scattered_direction = self.material.scatter(in_ray.direction, normal, is_front_face);
         if scattered_direction.is_none() {
             return Option::None;
         }
-
         return Option::from(Ray {
             origin: intersection,
             direction: scattered_direction.unwrap(),

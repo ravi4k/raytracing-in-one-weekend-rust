@@ -1,6 +1,6 @@
 use crate::geometry::color::Color;
 use crate::geometry::vector::{Vector3, Point};
-use crate::materials::material::{is_front_face, Material, reflect_ray, reflectance_schlick, refract};
+use crate::materials::material::{Material, reflect_ray, reflectance_schlick, refract};
 use crate::utils::random_f32;
 
 pub struct Dielectric {
@@ -8,13 +8,7 @@ pub struct Dielectric {
 }
 
 impl Material for Dielectric {
-    fn scatter(&self, in_direction: Vector3, _normal: Vector3) -> Option<Vector3> {
-        let mut normal = _normal;
-        let front_face = is_front_face(in_direction, normal);
-        if !front_face {
-            normal = -normal;
-        }
-
+    fn scatter(&self, in_direction: Vector3, normal: Vector3, front_face: bool) -> Option<Vector3> {
         let mut ir = 1.0 / self.refractive_index;
         if !front_face {
             ir = self.refractive_index;
@@ -30,6 +24,6 @@ impl Material for Dielectric {
     }
 
     fn color(&self, _u: f32, _v: f32, _intersection: Point) -> Color {
-        Color { r: 1.0, g: 1.0, b: 1.0 }
+        return Color::WHITE;
     }
 }

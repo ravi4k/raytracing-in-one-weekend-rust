@@ -9,7 +9,7 @@ pub struct Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, _in_direction: Vector3, normal: Vector3) -> Option<Vector3> {
+    fn scatter(&self, _in_direction: Vector3, normal: Vector3, _front_face: bool) -> Option<Vector3> {
         let mut scatter_direction = normal + Vector3::random_unit_vector();
         if scatter_direction.near_zero() {
             scatter_direction = normal;
