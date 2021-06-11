@@ -1,18 +1,15 @@
 use std::sync::Arc;
 use crate::objects::hittable::Hittable;
-use crate::objects::sphere::{Sphere, MovingSphere};
+use crate::objects::sphere::Sphere;
 use crate::geometry::vector::{Point, Vector3};
-use crate::textures::checkered::CheckeredTexture;
 use crate::materials::lambertian::Lambertian;
 use crate::textures::solid::SolidColor;
 use crate::geometry::color::Color;
-use crate::utils::{random_f32, random_f32_range};
-use crate::materials::dielectric::Dielectric;
-use crate::materials::metal::Metal;
 use crate::textures::perlin::{NoiseTexture, Perlin};
-use crate::textures::image::ImageTexture;
 use crate::materials::light::DiffuseLight;
 use crate::objects::rectangle::{XYRect, YZRect, XZRect};
+use crate::objects::boxes::AxisAlignedBox;
+use crate::objects::instances::{RotateY, Translate};
 
 pub fn cornell_box() -> Vec<Arc<dyn Hittable>> {
     let mut world: Vec<Arc<dyn Hittable>> = Vec::new();
@@ -77,8 +74,18 @@ pub fn cornell_box() -> Vec<Arc<dyn Hittable>> {
         x: (0.0, 555.0),
         y: (0.0, 555.0),
         k: 555.0,
-        material: white_material
+        material: white_material.clone(),
     }));
+
+    let mut box1: Arc<dyn Hittable> = Arc::new(AxisAlignedBox::new(Point::ORIGIN, Point { x: 165.0, y: 330.0, z: 165.0 }, white_material.clone()));
+    box1 = Arc::new(RotateY::new(box1.clone(), 15.0));
+    box1 = Arc::new(Translate { object: box1.clone(), offset: Vector3 { x: 265.0, y: 0.0, z: 295.0 } });
+    world.push(box1);
+
+    let mut box2: Arc<dyn Hittable> = Arc::new(AxisAlignedBox::new(Point::ORIGIN, Point { x: 165.0, y: 165.0, z: 165.0 }, white_material.clone()));
+    box2 = Arc::new(RotateY::new(box2.clone(), -18.0));
+    box2 = Arc::new(Translate { object: box2.clone(), offset: Vector3 { x: 130.0, y: 0.0, z: 65.0 } });
+    world.push(box2);
 
     return world;
 }

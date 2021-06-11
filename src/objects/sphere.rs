@@ -1,10 +1,9 @@
 use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
-use crate::geometry::color::Color;
 use crate::geometry::ray::Ray;
 use crate::geometry::vector::{Point, Vector3};
 use crate::materials::material::Material;
-use crate::objects::hittable::Hittable;
-use crate::utils::{PI, is_front_face};
+use crate::objects::hittable::{Hittable, HitRecord};
+use crate::utils::PI;
 use std::sync::Arc;
 
 pub struct Sphere {
@@ -33,11 +32,10 @@ impl Sphere {
 }
 
 impl Hittable for Sphere {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<f32> {
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let oc = ray.origin - self.center;
         let b = oc.dot(ray.direction);
         let c = oc.length_squared() - self.radius.powi(2);
-
         let mut discriminant = b.powi(2) - c;
         if discriminant < 0.0 {
             return Option::None;
@@ -51,44 +49,23 @@ impl Hittable for Sphere {
                 return Option::None;
             }
         }
-        return Option::from(t);
+
+        let intersection = ray.at_distance(t);
+        let normal = self.normal(intersection);
+        let material = self.material.clone();
+        let (u, v) = Self::get_sphere_uv(normal);
+
+        let mut hit_rec = HitRecord { intersection, normal, material, t, u, v, front_face: false };
+        hit_rec.set_face_normal(ray);
+        return Option::from(hit_rec);
     }
 
     fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AxisAlignedBoundingBox> {
         let p = Point {x: self.radius, y: self.radius, z: self.radius};
-        Option::from(AxisAlignedBoundingBox {
+        return Option::from(AxisAlignedBoundingBox {
             minimum: self.center - p,
             maximum: self.center + p,
-        })
-    }
-
-    fn color(&self, intersection: Point) -> Color {
-        let (u, v) = Self::get_sphere_uv(self.normal(intersection));
-        self.material.color(u, v, intersection)
-    }
-
-    fn scatter(&self, in_ray: Ray, intersection: Point) -> Option<Ray> {
-        let mut normal = self.normal(intersection);
-        let is_front_face: bool = is_front_face(in_ray.direction, normal);
-        if !is_front_face {
-            normal = -normal;
-        }
-
-        let scattered_direction = self.material.scatter(in_ray.direction, normal, is_front_face);
-        if scattered_direction.is_none() {
-            return Option::None;
-        }
-
-        return Option::from(Ray {
-            origin: intersection,
-            direction: scattered_direction.unwrap(),
-            time: in_ray.time,
         });
-    }
-
-    fn emitted(&self, intersection: Point) -> Color {
-        let (u, v) = Self::get_sphere_uv(self.normal(intersection));
-        return self.material.emitted(u, v, intersection);
     }
 }
 
@@ -116,7 +93,7 @@ impl MovingSphere {
 }
 
 impl Hittable for MovingSphere {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<f32> {
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let oc = ray.origin - self.center(ray.time);
         let b = oc.dot(ray.direction);
         let c = oc.length_squared() - self.radius.powi(2);
@@ -134,7 +111,15 @@ impl Hittable for MovingSphere {
                 return Option::None;
             }
         }
-        return Option::from(t);
+
+        let intersection = ray.at_distance(t);
+        let normal = self.normal(intersection, ray.time);
+        let material = self.material.clone();
+        let (u, v) = Sphere::get_sphere_uv(normal);
+
+        let mut hit_rec = HitRecord { intersection, normal, material, t, u, v, front_face: false };
+        hit_rec.set_face_normal(ray);
+        return Option::from(hit_rec);
     }
 
     fn bounding_box(&self, t0: f32, t1: f32) -> Option<AxisAlignedBoundingBox> {
@@ -148,33 +133,5 @@ impl Hittable for MovingSphere {
             maximum: self.center(t1) + p,
         };
         Option::from(AxisAlignedBoundingBox::surrounding_box(box0, box1))
-    }
-
-    fn color(&self, intersection: Point) -> Color {
-        let (u, v) = Sphere::get_sphere_uv(self.normal(intersection, 0.0));
-        return self.material.color(u, v, intersection);
-    }
-
-    fn scatter(&self, in_ray: Ray, intersection: Point) -> Option<Ray> {
-        let mut normal = self.normal(intersection, in_ray.time);
-        let is_front_face: bool = is_front_face(in_ray.direction, normal);
-        if !is_front_face {
-            normal = -normal;
-        }
-
-        let scattered_direction = self.material.scatter(in_ray.direction, normal, is_front_face);
-        if scattered_direction.is_none() {
-            return Option::None;
-        }
-        return Option::from(Ray {
-            origin: intersection,
-            direction: scattered_direction.unwrap(),
-            time: in_ray.time,
-        });
-    }
-
-    fn emitted(&self, intersection: Point) -> Color {
-        let (u, v) = Sphere::get_sphere_uv(self.normal(intersection, 0.0));
-        return self.material.emitted(u, v, intersection);
     }
 }

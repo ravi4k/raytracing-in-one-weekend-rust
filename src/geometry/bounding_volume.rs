@@ -10,52 +10,21 @@ pub struct AxisAlignedBoundingBox {
 }
 
 impl AxisAlignedBoundingBox {
-    pub fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> bool {
-        let mut t0: f32 = t_min;
-        let mut t1: f32 = t_max;
+    pub fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> bool {
+        let mut t_min = t_min;
+        let mut t_max = t_max;
+        for a in 0..3 {
+            let mut t0 = (self.minimum[a] - ray.origin[a]) / ray.direction[a];
+            let mut t1 = (self.maximum[a] - ray.origin[a]) / ray.direction[a];
 
-        let mut n = ((self.minimum.x - ray.origin.x) / ray.direction.x, (self.maximum.x - ray.origin.x) / ray.direction.x);
-        if ray.direction.x < 0.0 {
-            swap(&mut n.0, &mut n.1);
-        }
-        if n.0 > t0 {
-            t0 = n.0;
-        }
-        if n.1 < t1 {
-            t1 = n.1;
-        }
-        if t1 <= t0 {
-            return false;
-        }
+            if ray.direction[a] < 0.0 {
+                swap(&mut t0, &mut t1);
+            }
 
-        n = ((self.minimum.y - ray.origin.y) / ray.direction.y, (self.maximum.y - ray.origin.y) / ray.direction.y);
-        if ray.direction.y < 0.0 {
-            swap(&mut n.0, &mut n.1);
+            if t0 > t_min { t_min = t0; }
+            if t1 < t_max { t_max = t1; }
+            if t_max <= t_min { return false; }
         }
-        if n.0 > t0 {
-            t0 = n.0;
-        }
-        if n.1 < t1 {
-            t1 = n.1;
-        }
-        if t1 <= t0 {
-            return false;
-        }
-
-        n = ((self.minimum.z - ray.origin.z) / ray.direction.z, (self.maximum.z - ray.origin.z) / ray.direction.z);
-        if ray.direction.z < 0.0 {
-            swap(&mut n.0, &mut n.1);
-        }
-        if n.0 > t0 {
-            t0 = n.0;
-        }
-        if n.1 < t1 {
-            t1 = n.1;
-        }
-        if t1 <= t0 {
-            return false;
-        }
-
         return true;
     }
 

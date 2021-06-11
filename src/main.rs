@@ -11,8 +11,9 @@ use utils::random_f32;
 use utils::INF_F32;
 
 use world::camera::Camera;
-use world::bvh_node::{BVHNode, Node};
+use world::bvh_node::BVHNode;
 use scenes::cornell_box;
+use crate::objects::hittable::Hittable;
 
 mod geometry;
 mod objects;
@@ -22,25 +23,23 @@ mod utils;
 mod textures;
 mod scenes;
 
-fn ray_color(ray: Ray, background: Color, world: Arc<dyn Node>, depth: u32) -> Color {
+fn ray_color(ray: Ray, background: Color, world: Arc<dyn Hittable>, depth: u32) -> Color {
     if depth == 0 {
         return Color::BLACK;
     }
 
-    let hit_rec = world.hit(&ray, 0.01, INF_F32);
-    if hit_rec.is_none() {
+    let opt_hit_rec = world.hit(ray, 0.01, INF_F32);
+    if opt_hit_rec.is_none() {
         return background;
     }
 
-    let rec = hit_rec.unwrap();
-    let object = rec.object;
-    let color = object.color(rec.intersection);
-    let emitted = object.emitted(rec.intersection);
-
-    let scattered = object.scatter(ray, rec.intersection);
+    let hit_rec = opt_hit_rec.unwrap();
+    let emitted = hit_rec.material.emitted(hit_rec.u, hit_rec.v, hit_rec.intersection);
+    let scattered = hit_rec.material.scatter(ray, &hit_rec);
     if scattered.is_none() {
         return emitted;
     }
+    let color = hit_rec.material.color(hit_rec.u, hit_rec.v, hit_rec.intersection);
     return emitted + color * ray_color(scattered.unwrap(), background, world, depth - 1);
 }
 
@@ -54,7 +53,7 @@ struct ImageBlockInfo {
     image_block: Vec<Vec<Rgb<u8>>>,
 }
 
-fn process_block(mut block_info: ImageBlockInfo, image_blocks: Arc<Mutex<Vec<ImageBlockInfo>>>, camera: Camera, world: Arc<dyn Node>, background: Color) {
+fn process_block(mut block_info: ImageBlockInfo, image_blocks: Arc<Mutex<Vec<ImageBlockInfo>>>, camera: Camera, world: Arc<dyn Hittable>, background: Color) {
     for j in block_info.start_row..block_info.end_row {
         let mut row: Vec<Rgb<u8>> = Vec::with_capacity(block_info.image_width as usize) ;
         for i in 0..block_info.image_width {
@@ -80,8 +79,8 @@ fn main() {
     const IMAGE_WIDTH: u32 = 600;
     const IMAGE_HEIGHT: u32 = 600;
     const ASPECT_RATIO: f32 = IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32;
-    const SAMPLES_PER_PIXEL: u32 = 400;
-    const MAX_DEPTH: u32 = 50;
+    const SAMPLES_PER_PIXEL: u32 = 100;
+    const MAX_DEPTH: u32 = 20;
 
 
     //Camera

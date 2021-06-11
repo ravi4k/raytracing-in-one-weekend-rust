@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub};
+use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, Index, IndexMut};
 
 use rand::{Rng, thread_rng};
 use rand_distr::StandardNormal;
@@ -11,7 +11,7 @@ pub struct Vector3 {
 }
 
 impl Vector3 {
-    const ORIGIN: Point = Point {
+    pub const ORIGIN: Point = Point {
         x: 0.0,
         y: 0.0,
         z: 0.0,
@@ -128,6 +128,28 @@ impl Div<f32> for Vector3 {
 
     fn div(self, _rhs: f32) -> Self::Output {
         Self::Output { x: self.x / _rhs, y: self.y / _rhs, z: self.z / _rhs }
+    }
+}
+
+impl Index<usize> for Vector3 {
+    type Output = f32;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        return match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 | _ => &self.z,
+        }
+    }
+}
+
+impl IndexMut<usize> for Vector3 {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        return match index {
+            0 => &mut self.x,
+            1 => &mut self.y,
+            2 | _ => &mut self.z,
+        }
     }
 }
 

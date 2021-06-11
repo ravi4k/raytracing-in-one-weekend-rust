@@ -2,51 +2,57 @@ use std::cmp::Ordering;
 use std::sync::Arc;
 
 use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
-use crate::geometry::color::Color;
 use crate::geometry::ray::Ray;
-use crate::geometry::vector::Point;
-
-pub trait Hittable: Send + Sync {
-    fn hit(&self, _ray: &Ray, _t_min: f32, _t_max: f32) -> Option<f32>;
-    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AxisAlignedBoundingBox>;
-    fn color(&self, intersection: Point) -> Color;
-    fn scatter(&self, in_ray: Ray, intersection: Point) -> Option<Ray>;
-    fn emitted(&self, intersection: Point) -> Color;
-}
+use crate::geometry::vector::{Vector3, Point};
+use crate::materials::material::Material;
 
 pub struct HitRecord {
-    pub object: Arc<dyn Hittable>,
     pub intersection: Point,
+    pub normal: Vector3,
+    pub material: Arc<dyn Material>,
+    pub t: f32,
+    pub u: f32, pub v: f32,
+    pub front_face: bool,
 }
 
-fn box_compare(_lhs: &Arc<dyn Hittable>, _rhs: &Arc<dyn Hittable>, axis: u32) -> bool {
-    let box_a = _lhs.bounding_box(0.0, 0.0);
-    let box_b = _rhs.bounding_box(0.0, 0.0);
+pub trait Hittable: Send + Sync {
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AxisAlignedBoundingBox>;
+}
 
-    match axis {
-        0 => box_a.unwrap().minimum.x < box_b.unwrap().minimum.x,
-        1 => box_a.unwrap().minimum.y < box_b.unwrap().minimum.y,
-        2 | _ =>  box_a.unwrap().minimum.z < box_b.unwrap().minimum.z,
+impl HitRecord {
+    pub fn set_face_normal(&mut self, ray: Ray) {
+        self.front_face = ray.direction.dot(self.normal) < 0.0;
+        if !self.front_face {
+            self.normal = -self.normal;
+        }
     }
 }
 
-pub fn box_cmp_x(_lhs: &Arc<dyn Hittable>, _rhs: &Arc<dyn Hittable>) -> Ordering {
-    if box_compare(_rhs, _rhs, 0) {
+fn box_compare(lhs: &Arc<dyn Hittable>, rhs: &Arc<dyn Hittable>, axis: usize) -> bool {
+    let box_a = lhs.bounding_box(0.0, 0.0).unwrap();
+    let box_b = rhs.bounding_box(0.0, 0.0).unwrap();
+
+    return box_a.minimum[axis] < box_b.minimum[axis];
+}
+
+pub fn box_cmp_x(lhs: &Arc<dyn Hittable>, rhs: &Arc<dyn Hittable>) -> Ordering {
+    if box_compare(lhs, rhs, 0) {
         return Ordering::Less;
     }
-    return Ordering::Greater
+    return Ordering::Greater;
 }
 
-pub fn box_cmp_y(_lhs: &Arc<dyn Hittable>, _rhs: &Arc<dyn Hittable>) -> Ordering {
-    if box_compare(_rhs, _rhs, 1) {
+pub fn box_cmp_y(lhs: &Arc<dyn Hittable>, rhs: &Arc<dyn Hittable>) -> Ordering {
+    if box_compare(lhs, rhs, 1) {
         return Ordering::Less
     }
-    return Ordering::Greater
+    return Ordering::Greater;
 }
 
-pub fn box_cmp_z(_lhs: &Arc<dyn Hittable>, _rhs: &Arc<dyn Hittable>) -> Ordering {
-    if box_compare(_rhs, _rhs, 2) {
+pub fn box_cmp_z(lhs: &Arc<dyn Hittable>, rhs: &Arc<dyn Hittable>) -> Ordering {
+    if box_compare(lhs, rhs, 2) {
         return Ordering::Less;
     }
-    return Ordering::Greater
+    return Ordering::Greater;
 }

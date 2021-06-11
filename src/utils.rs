@@ -38,7 +38,3 @@ pub fn random_in_unit_disk() -> Point {
 pub fn random_int(min: u32, max: u32) -> u32 {
     thread_rng().gen_range(min..(max+1))
 }
-
-pub fn is_front_face(in_direction: Vector3, normal: Vector3) -> bool {
-    in_direction.dot(normal) < 0.0
-}

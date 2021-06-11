@@ -1,11 +1,9 @@
 use std::sync::Arc;
 use crate::materials::material::Material;
-use crate::objects::hittable::Hittable;
+use crate::objects::hittable::{Hittable, HitRecord};
 use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
-use crate::geometry::color::Color;
 use crate::geometry::vector::{Point, Vector3};
 use crate::geometry::ray::Ray;
-use crate::utils::is_front_face;
 
 pub struct XYRect {
     pub x: (f32, f32),
@@ -24,7 +22,7 @@ impl XYRect {
 }
 
 impl Hittable for XYRect {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<f32> {
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let t = (self.k - ray.origin.z) / ray.direction.z;
         if t < t_min || t > t_max {
             return Option::None;
@@ -37,11 +35,18 @@ impl Hittable for XYRect {
             return Option::None;
         }
 
-        return Option::from(t);
+        let intersection = ray.at_distance(t);
+        let normal = Self::NORMAL;
+        let material = self.material.clone();
+        let (u, v) = self.get_uv(x, y);
+
+        let mut hit_rec = HitRecord { intersection, normal, material, t, u, v, front_face: false };
+        hit_rec.set_face_normal(ray);
+        return Option::from(hit_rec);
     }
 
     fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AxisAlignedBoundingBox> {
-        Option::from(AxisAlignedBoundingBox {
+        return Option::from(AxisAlignedBoundingBox {
             minimum: Point {
                 x: self.x.0,
                 y: self.y.0,
@@ -52,35 +57,7 @@ impl Hittable for XYRect {
                 y: self.y.1,
                 z: self.k + 0.0001,
             }
-        })
-    }
-
-    fn color(&self, intersection: Point) -> Color {
-        let (u, v) = self.get_uv(intersection.x, intersection.y);
-        return self.material.color(u, v, intersection);
-    }
-
-    fn scatter(&self, in_ray: Ray, intersection: Point) -> Option<Ray> {
-        let mut normal = Self::NORMAL;
-        let is_front_face: bool = is_front_face(in_ray.direction, normal);
-        if !is_front_face {
-            normal = -normal;
-        }
-
-        let scattered_direction = self.material.scatter(in_ray.direction, normal, is_front_face);
-        if scattered_direction.is_none() {
-            return Option::None;
-        }
-        return Option::from(Ray {
-            origin: intersection,
-            direction: scattered_direction.unwrap(),
-            time: in_ray.time,
         });
-    }
-
-    fn emitted(&self, intersection: Point) -> Color {
-        let (u, v) = self.get_uv(intersection.x, intersection.y);
-        return self.material.emitted(u, v, intersection);
     }
 }
 
@@ -101,7 +78,7 @@ impl XZRect {
 }
 
 impl Hittable for XZRect {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<f32> {
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let t = (self.k - ray.origin.y) / ray.direction.y;
         if t < t_min || t > t_max {
             return Option::None;
@@ -114,11 +91,18 @@ impl Hittable for XZRect {
             return Option::None;
         }
 
-        return Option::from(t);
+        let intersection = ray.at_distance(t);
+        let normal = Self::NORMAL;
+        let material = self.material.clone();
+        let (u, v) = self.get_uv(x, z);
+
+        let mut hit_rec = HitRecord { intersection, normal, material, t, u, v, front_face: false };
+        hit_rec.set_face_normal(ray);
+        return Option::from(hit_rec);
     }
 
     fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AxisAlignedBoundingBox> {
-        Option::from(AxisAlignedBoundingBox {
+        return Option::from(AxisAlignedBoundingBox {
             minimum: Point {
                 x: self.x.0,
                 y: self.k - 0.0001,
@@ -129,35 +113,7 @@ impl Hittable for XZRect {
                 y: self.k + 0.0001,
                 z: self.z.1,
             }
-        })
-    }
-
-    fn color(&self, intersection: Point) -> Color {
-        let (u, v) = self.get_uv(intersection.x, intersection.z);
-        return self.material.color(u, v, intersection);
-    }
-
-    fn scatter(&self, in_ray: Ray, intersection: Point) -> Option<Ray> {
-        let mut normal = Self::NORMAL;
-        let is_front_face: bool = is_front_face(in_ray.direction, normal);
-        if !is_front_face {
-            normal = -normal;
-        }
-
-        let scattered_direction = self.material.scatter(in_ray.direction, normal, is_front_face);
-        if scattered_direction.is_none() {
-            return Option::None;
-        }
-        return Option::from(Ray {
-            origin: intersection,
-            direction: scattered_direction.unwrap(),
-            time: in_ray.time,
         });
-    }
-
-    fn emitted(&self, intersection: Point) -> Color {
-        let (u, v) = self.get_uv(intersection.x, intersection.z);
-        return self.material.emitted(u, v, intersection);
     }
 }
 
@@ -178,7 +134,7 @@ impl YZRect {
 }
 
 impl Hittable for YZRect {
-    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<f32> {
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         let t = (self.k - ray.origin.x) / ray.direction.x;
         if t < t_min || t > t_max {
             return Option::None;
@@ -191,11 +147,18 @@ impl Hittable for YZRect {
             return Option::None;
         }
 
-        return Option::from(t);
+        let intersection = ray.at_distance(t);
+        let normal = Self::NORMAL;
+        let material = self.material.clone();
+        let (u, v) = self.get_uv(y, z);
+
+        let mut hit_rec = HitRecord { intersection, normal, material, t, u, v, front_face: false };
+        hit_rec.set_face_normal(ray);
+        return Option::from(hit_rec);
     }
 
     fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AxisAlignedBoundingBox> {
-        Option::from(AxisAlignedBoundingBox {
+        return Option::from(AxisAlignedBoundingBox {
             minimum: Point {
                 x: self.k - 0.0001,
                 y: self.y.0,
@@ -206,34 +169,6 @@ impl Hittable for YZRect {
                 y: self.y.1,
                 z: self.z.1,
             }
-        })
-    }
-
-    fn color(&self, intersection: Point) -> Color {
-        let (u, v) = self.get_uv(intersection.y, intersection.z);
-        return self.material.color(u, v, intersection);
-    }
-
-    fn scatter(&self, in_ray: Ray, intersection: Point) -> Option<Ray> {
-        let mut normal = Self::NORMAL;
-        let is_front_face: bool = is_front_face(in_ray.direction, normal);
-        if !is_front_face {
-            normal = -normal;
-        }
-
-        let scattered_direction = self.material.scatter(in_ray.direction, normal, is_front_face);
-        if scattered_direction.is_none() {
-            return Option::None;
-        }
-        return Option::from(Ray {
-            origin: intersection,
-            direction: scattered_direction.unwrap(),
-            time: in_ray.time,
         });
-    }
-
-    fn emitted(&self, intersection: Point) -> Color {
-        let (u, v) = self.get_uv(intersection.y, intersection.z);
-        return self.material.emitted(u, v, intersection);
     }
 }
