@@ -12,8 +12,8 @@ use utils::INF_F32;
 
 use world::camera::Camera;
 use world::bvh_node::BVHNode;
-use scenes::cornell_box;
-use crate::objects::hittable::Hittable;
+use objects::hittable::Hittable;
+use scenes::final_scene;
 
 mod geometry;
 mod objects;
@@ -80,11 +80,11 @@ fn main() {
     const IMAGE_HEIGHT: u32 = 600;
     const ASPECT_RATIO: f32 = IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32;
     const SAMPLES_PER_PIXEL: u32 = 100;
-    const MAX_DEPTH: u32 = 20;
+    const MAX_DEPTH: u32 = 25;
 
 
     //Camera
-    let look_from = Point { x: 278.0, y: 278.0, z: -800.0 };
+    let look_from = Point { x: 478.0, y: 278.0, z: -600.0 };
     let look_at = Point { x: 278.0, y: 278.0, z: 0.0 };
     let v_up = Vector3 { x: 0.0, y: 1.0, z: 0.0 };
     let v_fov = 40.0;
@@ -105,13 +105,13 @@ fn main() {
 
 
     // World
-    let mut world = cornell_box();
+    let mut world = final_scene();
     let world = BVHNode::create_tree(&mut world, 0.0, 1.0);
     let background = Color::BLACK;
 
 
     // Render
-    const NTHREADS: u32 = 8;
+    const NTHREADS: u32 = 10;
     let mut threads: Vec<thread::JoinHandle<()>> = Vec::new();
     let image_blocks: Arc<Mutex<Vec<ImageBlockInfo>>> = Arc::new(Mutex::new(Vec::new()));
 

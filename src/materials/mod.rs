@@ -3,3 +3,4 @@ pub mod lambertian;
 pub mod metal;
 pub mod dielectric;
 pub mod light;
+pub mod isotropic;

@@ -13,7 +13,7 @@ pub struct Metal {
 impl Material for Metal {
     fn scatter(&self, in_ray: Ray, hit_rec: &HitRecord) -> Option<Ray> {
         let reflected_direction = reflect_ray(in_ray.direction, hit_rec.normal) + self.fuzz * random_in_unit_sphere();
-        if reflected_direction.dot(hit_rec.normal) > 0.0 {
+        if reflected_direction.dot(hit_rec.normal) < 0.0 {
             return Option::None;
         }
         return Option::from(Ray {
