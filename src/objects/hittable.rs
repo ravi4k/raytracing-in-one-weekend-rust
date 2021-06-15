@@ -16,8 +16,38 @@ pub struct HitRecord {
 }
 
 pub trait Hittable: Send + Sync {
-    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
-    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AxisAlignedBoundingBox>;
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        return Option::None;
+    }
+    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AxisAlignedBoundingBox> {
+        return Option::None;
+    }
+    fn pdf_value(&self, o: Point, v: Vector3) -> f32 {
+        return 0.0;
+    }
+    fn random(&self, o: Vector3) -> Vector3 {
+        return Vector3 { x: 1.0, y: 0.0, z: 0.0 };
+    }
+}
+
+pub struct FlipFace {
+    pub object: Arc<dyn Hittable>
+}
+
+impl Hittable for FlipFace {
+    fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        let opt_hit_rec = self.object.hit(ray, t_min, t_max);
+        if opt_hit_rec.is_none() {
+            return opt_hit_rec;
+        }
+        let mut hit_rec = opt_hit_rec.unwrap();
+        hit_rec.front_face = !hit_rec.front_face;
+        return Option::from(hit_rec);
+    }
+
+    fn bounding_box(&self, t0: f32, t1: f32) -> Option<AxisAlignedBoundingBox> {
+        return self.object.bounding_box(t0, t1);
+    }
 }
 
 impl HitRecord {

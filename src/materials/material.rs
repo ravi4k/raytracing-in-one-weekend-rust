@@ -4,9 +4,19 @@ use crate::geometry::ray::Ray;
 use crate::objects::hittable::HitRecord;
 
 pub trait Material: Send + Sync {
-    fn scatter(&self, in_ray: Ray, hit_rec: &HitRecord) -> Option<Ray>;
-    fn color(&self, u: f32, v: f32, intersection: Point) -> Color;
-    fn emitted(&self, _u: f32, _v: f32, _intersection: Point) -> Color {
+    fn scatter(&self, in_ray: Ray, hit_rec: &HitRecord) -> Option<Ray> {
+        return Option::None;
+    }
+    fn pdf(&self, in_ray: Ray, hit_rec: &HitRecord, scattered_ray: Ray) -> f32 {
+        return 0.0;
+    }
+    fn scattering_pdf(&self, in_ray: Ray, hit_rec: &HitRecord, scattered_ray: Ray) -> f32 {
+        return 0.0;
+    }
+    fn color(&self, u: f32, v: f32, intersection: Point) -> Color {
+        return Color::BLACK;
+    }
+    fn emitted(&self, ray: Ray, hit_rec: &HitRecord, u: f32, v: f32, intersection: Point) -> Color {
         return Color::BLACK;
     }
 }

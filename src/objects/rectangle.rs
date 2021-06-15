@@ -4,6 +4,7 @@ use crate::objects::hittable::{Hittable, HitRecord};
 use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
 use crate::geometry::vector::{Point, Vector3};
 use crate::geometry::ray::Ray;
+use crate::utils::{INF_F32, random_f32_range};
 
 pub struct XYRect {
     pub x: (f32, f32),
@@ -114,6 +115,29 @@ impl Hittable for XZRect {
                 z: self.z.1,
             }
         });
+    }
+
+    fn pdf_value(&self, origin: Point, v: Vector3) -> f32 {
+        let opt_hit_rec = self.hit(Ray {origin, direction: v, time: 0.0}, 0.001, INF_F32);
+        if opt_hit_rec.is_none() {
+            return 0.0;
+        }
+
+        let hit_rec = opt_hit_rec.unwrap();
+        let area = (self.x.1 - self.x.0) * (self.z.1 - self.z.0);
+        let dist_squared = hit_rec.t.powi(2) * v.length_squared();
+        let cosine = (v.dot(hit_rec.normal) / v.length()).abs();
+
+        return dist_squared / (cosine * area);
+    }
+
+    fn random(&self, origin: Vector3) -> Vector3 {
+        let random_point = Point {
+            x: random_f32_range(self.x.0, self.x.1),
+            y: self.k,
+            z: random_f32_range(self.z.0, self.z.1)
+        };
+        return random_point - origin;
     }
 }
 

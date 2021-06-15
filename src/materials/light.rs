@@ -5,21 +5,26 @@ use crate::geometry::color::Color;
 use crate::geometry::vector::Point;
 use crate::geometry::ray::Ray;
 use crate::objects::hittable::HitRecord;
+use crate::textures::solid::SolidColor;
 
 pub struct DiffuseLight {
     pub emit: Arc<dyn Texture>,
 }
 
+impl DiffuseLight {
+    pub fn new(color: Color) -> Self {
+        return Self {
+            emit: Arc::new(SolidColor { color })
+        };
+    }
+}
+
 impl Material for DiffuseLight {
-    fn scatter(&self, _in_ray: Ray, _hit_rec: &HitRecord) -> Option<Ray> {
-        return Option::None;
-    }
-
-    fn color(&self, _u: f32, _v: f32, _intersection: Point) -> Color {
-        return Color::BLACK;
-    }
-
-    fn emitted(&self, u: f32, v: f32, intersection: Point) -> Color {
-        return self.emit.color(u, v, intersection);
+    fn emitted(&self, _ray: Ray, hit_rec: &HitRecord, u: f32, v: f32, intersection: Point) -> Color {
+        return if hit_rec.front_face {
+            self.emit.color(u, v, intersection)
+        } else {
+            Color::BLACK
+        };
     }
 }
