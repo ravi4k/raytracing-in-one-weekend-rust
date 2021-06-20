@@ -1,8 +1,9 @@
-use crate::geometry::vector::{Vector3, Point};
-use crate::utils::{random_f32, PI};
-use crate::geometry::onb::ONB;
 use std::sync::Arc;
+
+use crate::geometry::onb::ONB;
+use crate::geometry::vector::{Point, Vector3};
 use crate::objects::hittable::Hittable;
+use crate::utils::{PI, random_f32};
 
 pub fn random_cosine_direction() -> Vector3 {
     let r1 = random_f32();
@@ -22,12 +23,12 @@ pub trait PDF {
 }
 
 pub struct CosinePDF {
-    uvw: ONB
+    uvw: ONB,
 }
 
 impl CosinePDF {
     pub fn new(w: Vector3) -> Self {
-        return Self{
+        return Self {
             uvw: ONB::build_from_w(w)
         };
     }
@@ -46,7 +47,7 @@ impl PDF for CosinePDF {
 
 pub struct HittablePDF {
     pub o: Point,
-    pub ptr: Arc<dyn Hittable>
+    pub ptr: Arc<dyn Hittable>,
 }
 
 impl PDF for HittablePDF {
@@ -60,7 +61,7 @@ impl PDF for HittablePDF {
 }
 
 pub struct MixturePDF {
-    pub(crate) ptr: [Arc<dyn PDF>; 2]
+    pub ptr: [Arc<dyn PDF>; 2],
 }
 
 impl PDF for MixturePDF {
@@ -73,6 +74,6 @@ impl PDF for MixturePDF {
             self.ptr[0].generate()
         } else {
             self.ptr[1].generate()
-        }
+        };
     }
 }

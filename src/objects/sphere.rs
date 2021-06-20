@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
+use crate::geometry::onb::ONB;
 use crate::geometry::ray::Ray;
 use crate::geometry::vector::{Point, Vector3};
 use crate::materials::material::Material;
-use crate::objects::hittable::{Hittable, HitRecord};
-use crate::utils::PI;
-use std::sync::Arc;
+use crate::objects::hittable::{HitRecord, Hittable};
+use crate::utils::{INF_F32, PI, random_to_sphere};
 
 pub struct Sphere {
     pub center: Point,
@@ -61,11 +63,28 @@ impl Hittable for Sphere {
     }
 
     fn bounding_box(&self, _t0: f32, _t1: f32) -> Option<AxisAlignedBoundingBox> {
-        let p = Point {x: self.radius, y: self.radius, z: self.radius};
+        let p = Point { x: self.radius, y: self.radius, z: self.radius };
         return Option::from(AxisAlignedBoundingBox {
             minimum: self.center - p,
             maximum: self.center + p,
         });
+    }
+
+    fn pdf_value(&self, o: Point, v: Vector3) -> f32 {
+        let opt_hit_rec = self.hit(Ray { origin: o, direction: v, time: 0.0 }, 0.001, INF_F32);
+        if opt_hit_rec.is_none() {
+            return 0.0;
+        }
+
+        let cos_max = (1.0 - self.radius.powi(2) / (self.center - o).length_squared()).sqrt();
+        return 1.0 / (2.0 * PI * (1.0 - cos_max));
+    }
+
+    fn random(&self, o: Vector3) -> Vector3 {
+        let direction = self.center - o;
+        let dist_sq = direction.length_squared();
+        let uvw = ONB::build_from_w(direction);
+        return uvw.local(random_to_sphere(self.radius, dist_sq));
     }
 }
 
@@ -123,7 +142,7 @@ impl Hittable for MovingSphere {
     }
 
     fn bounding_box(&self, t0: f32, t1: f32) -> Option<AxisAlignedBoundingBox> {
-        let p = Point {x: self.radius, y: self.radius, z: self.radius};
+        let p = Point { x: self.radius, y: self.radius, z: self.radius };
         let box0 = AxisAlignedBoundingBox {
             minimum: self.center(t0) - p,
             maximum: self.center(t0) + p,

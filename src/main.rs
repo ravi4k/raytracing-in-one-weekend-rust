@@ -4,19 +4,20 @@ use std::thread;
 use image::{ImageBuffer, Rgb, RgbImage};
 
 use geometry::color::Color;
+use geometry::pdf::{CosinePDF, HittablePDF, MixturePDF, PDF};
 use geometry::ray::Ray;
 use geometry::vector::{Point, Vector3};
-use geometry::pdf::{CosinePDF, PDF, HittablePDF, MixturePDF};
-
-use utils::random_f32;
-use utils::INF_F32;
-
-use world::camera::Camera;
-use world::bvh_node::BVHNode;
-use objects::hittable::Hittable;
-use scenes::cornell_box;
-use objects::rectangle::XZRect;
 use materials::light::DiffuseLight;
+use objects::hittable::Hittable;
+use objects::rectangle::XZRect;
+use scenes::cornell_box;
+use utils::INF_F32;
+use utils::random_f32;
+use world::bvh_node::BVHNode;
+use world::camera::Camera;
+
+use crate::objects::sphere::Sphere;
+use crate::world::hittable_list::HittableList;
 
 mod geometry;
 mod objects;
@@ -35,31 +36,36 @@ fn ray_color(ray: Ray, background: Color, world: Arc<dyn Hittable>, lights: Arc<
     if opt_hit_rec.is_none() {
         return background;
     }
-
     let hit_rec = opt_hit_rec.unwrap();
+
     let emitted = hit_rec.material.emitted(ray, &hit_rec, hit_rec.u, hit_rec.v, hit_rec.intersection);
-    let scattered = hit_rec.material.scatter(ray, &hit_rec);
-    if scattered.is_none() {
+
+    let opt_scatter_rec = hit_rec.material.scatter(ray, &hit_rec);
+    if opt_scatter_rec.is_none() {
         return emitted;
     }
-    let albedo = hit_rec.material.color(hit_rec.u, hit_rec.v, hit_rec.intersection);
+    let scatter_rec = opt_scatter_rec.unwrap();
 
-    let p0: Arc<dyn PDF> = Arc::new(HittablePDF {
+    if scatter_rec.specular_ray.is_some() {
+        return scatter_rec.attenuation * ray_color(scatter_rec.specular_ray.unwrap(), background, world, lights, depth - 1);
+    }
+    let light_pdf: Arc<dyn PDF> = Arc::new(HittablePDF {
         o: hit_rec.intersection,
         ptr: lights.clone(),
     });
-    let p1: Arc<dyn PDF> = Arc::new(CosinePDF::new(hit_rec.normal));
-    let  mix_pdf = MixturePDF {
-        ptr: [p0, p1]
+    let mix_pdf = MixturePDF {
+        ptr: [light_pdf, scatter_rec.pdf_ptr.unwrap()]
     };
-    let scattered_new = Ray {
+
+    let scattered = Ray {
         origin: hit_rec.intersection,
         direction: mix_pdf.generate().direction(),
         time: ray.time,
     };
-    let pdf_val = mix_pdf.value(scattered_new.direction);
-    return emitted + (hit_rec.material.scattering_pdf(ray, &hit_rec, scattered_new) / pdf_val) *
-        albedo * ray_color(scattered_new, background, world, lights, depth - 1);
+    let pdf_val = mix_pdf.value(scattered.direction);
+
+    return emitted + (hit_rec.material.scattering_pdf(ray, &hit_rec, scattered) / pdf_val) *
+        scatter_rec.attenuation * ray_color(scattered, background, world, lights, depth - 1);
 }
 
 struct ImageBlockInfo {
@@ -74,7 +80,7 @@ struct ImageBlockInfo {
 
 fn process_block(mut block_info: ImageBlockInfo, image_blocks: Arc<Mutex<Vec<ImageBlockInfo>>>, camera: Camera, world: Arc<dyn Hittable>, lights: Arc<dyn Hittable>, background: Color) {
     for j in block_info.start_row..block_info.end_row {
-        let mut row: Vec<Rgb<u8>> = Vec::with_capacity(block_info.image_width as usize) ;
+        let mut row: Vec<Rgb<u8>> = Vec::with_capacity(block_info.image_width as usize);
         for i in 0..block_info.image_width {
             let mut pixel_color = Color { r: 0.0, g: 0.0, b: 0.0 };
             for _ in 0..block_info.spp {
@@ -88,7 +94,7 @@ fn process_block(mut block_info: ImageBlockInfo, image_blocks: Arc<Mutex<Vec<Ima
         }
         block_info.image_block.push(row);
     }
-    
+
     let mut image = image_blocks.lock().unwrap();
     image.push(block_info);
 }
@@ -127,13 +133,19 @@ fn main() {
     let mut world = cornell_box();
     let world = BVHNode::create_tree(&mut world, 0.0, 1.0);
     let background = Color::BLACK;
-    let lights = Arc::new(XZRect {
+    let mut lights = HittableList::new();
+    lights.add(Arc::new(XZRect {
         x: (213.0, 343.0),
         z: (227.0, 332.0),
         k: 554.0,
-        material: Arc::new(DiffuseLight::new(Color {r: 0.0, g: 0.0, b: 0.0 }))
-    });
-
+        material: Arc::new(DiffuseLight::new(Color::WHITE)),
+    }));
+    lights.add(Arc::new(Sphere {
+        center: Point { x: 190.0, y: 90.0, z: 190.0 },
+        radius: 90.0,
+        material: Arc::new(DiffuseLight::new(Color::WHITE)),
+    }));
+    let light_list = Arc::new(lights);
 
     // Render
     const NTHREADS: u32 = 10;
@@ -146,7 +158,7 @@ fn main() {
     for i in 0..NTHREADS {
         let block_info = ImageBlockInfo {
             start_row: i * block_size,
-            end_row: i * block_size + ( if i == NTHREADS - 1 { end_block_size } else { block_size } ),
+            end_row: i * block_size + (if i == NTHREADS - 1 { end_block_size } else { block_size }),
             image_height: IMAGE_HEIGHT,
             image_width: IMAGE_WIDTH,
             spp: SAMPLES_PER_PIXEL,
@@ -157,7 +169,7 @@ fn main() {
         let camera_new = camera.clone();
         let image_blocks_new = image_blocks.clone();
         let world_new = world.clone();
-        let lights_new = lights.clone();
+        let lights_new = light_list.clone();
 
         let handle = thread::spawn(move || {
             process_block(block_info, image_blocks_new, camera_new, world_new, lights_new, background);

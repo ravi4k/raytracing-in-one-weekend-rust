@@ -1,6 +1,6 @@
-use crate::textures::texture::Texture;
 use crate::geometry::color::Color;
 use crate::geometry::vector::{Point, Vector3};
+use crate::textures::texture::Texture;
 use crate::utils::random_int;
 
 pub struct Perlin {
@@ -16,7 +16,7 @@ impl Perlin {
     pub fn new() -> Self {
         let mut ran_vec: Vec<Vector3> = Vec::with_capacity(Self::POINT_COUNT);
         for _i in 0..Self::POINT_COUNT {
-            ran_vec.push(Vector3::random_unit_vector() );
+            ran_vec.push(Vector3::random_unit_vector());
         }
 
         let perm_x = Self::perlin_generate_perm();
@@ -28,7 +28,7 @@ impl Perlin {
             perm_x,
             perm_y,
             perm_z,
-        }
+        };
     }
 
     pub fn noise(&self, point: Point) -> f32 {
@@ -40,7 +40,7 @@ impl Perlin {
         let j = point.y.floor() as i32;
         let k = point.z.floor() as i32;
 
-        let def = Vector3 { x: 0.0, y: 0.0, z: 0.0};
+        let def = Vector3 { x: 0.0, y: 0.0, z: 0.0 };
         let def_z = vec![def, def];
         let def_y = vec![def_z.clone(), def_z];
         let mut def_x = vec![def_y.clone(), def_y];
@@ -50,9 +50,9 @@ impl Perlin {
                 for dk in 0..2 {
                     def_x[di][dj][dk] = self.ran_vec[
                         (self.perm_x[((i + di as i32) & 255) as usize] ^
-                         self.perm_y[((j + dj as i32) & 255) as usize] ^
-                         self.perm_z[((k + dk as i32) & 255) as usize] as usize)
-                    ];
+                            self.perm_y[((j + dj as i32) & 255) as usize] ^
+                            self.perm_z[((k + dk as i32) & 255) as usize] as usize)
+                        ];
                 }
             }
         }
@@ -76,9 +76,9 @@ impl Perlin {
                         z: w - k as f32,
                     };
                     accum += (i as f32 * uu + (1 - i) as f32 * (1.0 - uu)) *
-                             (j as f32 * vv + (1 - j) as f32 * (1.0 - vv)) *
-                             (k as f32 * ww + (1 - k) as f32 * (1.0 - ww)) *
-                             c[i][j][k].dot(weight);
+                        (j as f32 * vv + (1 - j) as f32 * (1.0 - vv)) *
+                        (k as f32 * ww + (1 - k) as f32 * (1.0 - ww)) *
+                        c[i][j][k].dot(weight);
                 }
             }
         }

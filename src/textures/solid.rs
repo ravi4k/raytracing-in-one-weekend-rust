@@ -1,6 +1,6 @@
 use crate::geometry::color::Color;
-use crate::textures::texture::Texture;
 use crate::geometry::vector::Point;
+use crate::textures::texture::Texture;
 
 pub struct SolidColor {
     pub color: Color,

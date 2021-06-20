@@ -1,7 +1,8 @@
 use image::RgbImage;
-use crate::textures::texture::Texture;
+
 use crate::geometry::color::Color;
 use crate::geometry::vector::Point;
+use crate::textures::texture::Texture;
 
 pub struct ImageTexture {
     pub img_data: RgbImage,

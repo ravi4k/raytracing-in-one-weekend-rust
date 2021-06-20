@@ -1,7 +1,8 @@
-use crate::textures::texture::Texture;
 use std::sync::Arc;
+
 use crate::geometry::color::Color;
 use crate::geometry::vector::Point;
+use crate::textures::texture::Texture;
 
 pub struct CheckeredTexture {
     pub even: Arc<dyn Texture>,
@@ -15,6 +16,6 @@ impl Texture for CheckeredTexture {
             self.odd.color(u, v, point)
         } else {
             self.even.color(u, v, point)
-        }
+        };
     }
 }

@@ -1,8 +1,9 @@
-use crate::objects::hittable::{Hittable, HitRecord};
 use std::sync::Arc;
-use crate::geometry::vector::Point;
+
 use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
 use crate::geometry::ray::Ray;
+use crate::geometry::vector::Point;
+use crate::objects::hittable::{HitRecord, Hittable};
 use crate::utils::{degrees_to_radians, INF_F32};
 
 pub struct Translate {
@@ -60,7 +61,7 @@ impl RotateY {
         let sin_theta = radians.sin();
         let cos_theta = radians.cos();
 
-        let mut temp =  Self {
+        let mut temp = Self {
             object,
             sin_theta,
             cos_theta,
@@ -73,8 +74,8 @@ impl RotateY {
         }
 
         let mut bound_box = opt_bound_box.unwrap();
-        let mut min = Point {x: INF_F32, y: INF_F32, z: INF_F32};
-        let mut max = Point {x: -INF_F32, y: -INF_F32, z: -INF_F32};
+        let mut min = Point { x: INF_F32, y: INF_F32, z: INF_F32 };
+        let mut max = Point { x: -INF_F32, y: -INF_F32, z: -INF_F32 };
 
         for i in 0..2 {
             for j in 0..2 {

@@ -1,11 +1,12 @@
-use crate::textures::texture::Texture;
 use std::sync::Arc;
-use crate::materials::material::Material;
+
 use crate::geometry::color::Color;
-use crate::geometry::vector::Point;
 use crate::geometry::ray::Ray;
+use crate::geometry::vector::Point;
+use crate::materials::material::Material;
 use crate::objects::hittable::HitRecord;
 use crate::textures::solid::SolidColor;
+use crate::textures::texture::Texture;
 
 pub struct DiffuseLight {
     pub emit: Arc<dyn Texture>,

@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
 use crate::geometry::ray::Ray;
-use crate::geometry::vector::{Vector3, Point};
+use crate::geometry::vector::{Point, Vector3};
 use crate::materials::material::Material;
 
 pub struct HitRecord {
@@ -11,7 +11,8 @@ pub struct HitRecord {
     pub normal: Vector3,
     pub material: Arc<dyn Material>,
     pub t: f32,
-    pub u: f32, pub v: f32,
+    pub u: f32,
+    pub v: f32,
     pub front_face: bool,
 }
 
@@ -31,7 +32,7 @@ pub trait Hittable: Send + Sync {
 }
 
 pub struct FlipFace {
-    pub object: Arc<dyn Hittable>
+    pub object: Arc<dyn Hittable>,
 }
 
 impl Hittable for FlipFace {
@@ -75,7 +76,7 @@ pub fn box_cmp_x(lhs: &Arc<dyn Hittable>, rhs: &Arc<dyn Hittable>) -> Ordering {
 
 pub fn box_cmp_y(lhs: &Arc<dyn Hittable>, rhs: &Arc<dyn Hittable>) -> Ordering {
     if box_compare(lhs, rhs, 1) {
-        return Ordering::Less
+        return Ordering::Less;
     }
     return Ordering::Greater;
 }

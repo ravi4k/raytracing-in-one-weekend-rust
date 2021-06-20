@@ -1,11 +1,12 @@
-use crate::geometry::vector::Point;
-use crate::objects::hittable::{Hittable, HitRecord};
 use std::sync::Arc;
-use crate::world::hittable_list::HittableList;
+
 use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
 use crate::geometry::ray::Ray;
+use crate::geometry::vector::Point;
 use crate::materials::material::Material;
+use crate::objects::hittable::{HitRecord, Hittable};
 use crate::objects::rectangle::{XYRect, XZRect, YZRect};
+use crate::world::hittable_list::HittableList;
 
 pub struct AxisAlignedBox {
     pub box_min: Point,

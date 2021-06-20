@@ -1,16 +1,17 @@
 use std::sync::Arc;
-use crate::materials::material::Material;
-use crate::objects::hittable::{Hittable, HitRecord};
+
 use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
-use crate::geometry::vector::{Point, Vector3};
 use crate::geometry::ray::Ray;
+use crate::geometry::vector::{Point, Vector3};
+use crate::materials::material::Material;
+use crate::objects::hittable::{HitRecord, Hittable};
 use crate::utils::{INF_F32, random_f32_range};
 
 pub struct XYRect {
     pub x: (f32, f32),
     pub y: (f32, f32),
     pub k: f32,
-    pub material: Arc<dyn Material>
+    pub material: Arc<dyn Material>,
 }
 
 impl XYRect {
@@ -57,7 +58,7 @@ impl Hittable for XYRect {
                 x: self.x.1,
                 y: self.y.1,
                 z: self.k + 0.0001,
-            }
+            },
         });
     }
 }
@@ -66,7 +67,7 @@ pub struct XZRect {
     pub x: (f32, f32),
     pub z: (f32, f32),
     pub k: f32,
-    pub material: Arc<dyn Material>
+    pub material: Arc<dyn Material>,
 }
 
 impl XZRect {
@@ -113,12 +114,12 @@ impl Hittable for XZRect {
                 x: self.x.1,
                 y: self.k + 0.0001,
                 z: self.z.1,
-            }
+            },
         });
     }
 
     fn pdf_value(&self, origin: Point, v: Vector3) -> f32 {
-        let opt_hit_rec = self.hit(Ray {origin, direction: v, time: 0.0}, 0.001, INF_F32);
+        let opt_hit_rec = self.hit(Ray { origin, direction: v, time: 0.0 }, 0.001, INF_F32);
         if opt_hit_rec.is_none() {
             return 0.0;
         }
@@ -135,7 +136,7 @@ impl Hittable for XZRect {
         let random_point = Point {
             x: random_f32_range(self.x.0, self.x.1),
             y: self.k,
-            z: random_f32_range(self.z.0, self.z.1)
+            z: random_f32_range(self.z.0, self.z.1),
         };
         return random_point - origin;
     }
@@ -145,7 +146,7 @@ pub struct YZRect {
     pub y: (f32, f32),
     pub z: (f32, f32),
     pub k: f32,
-    pub material: Arc<dyn Material>
+    pub material: Arc<dyn Material>,
 }
 
 impl YZRect {
@@ -192,7 +193,7 @@ impl Hittable for YZRect {
                 x: self.k + 0.0001,
                 y: self.y.1,
                 z: self.z.1,
-            }
+            },
         });
     }
 }

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::geometry::bounding_volume::AxisAlignedBoundingBox;
 use crate::geometry::ray::Ray;
-use crate::objects::hittable::{box_cmp_x, box_cmp_y, box_cmp_z, Hittable, HitRecord};
+use crate::objects::hittable::{box_cmp_x, box_cmp_y, box_cmp_z, HitRecord, Hittable};
 use crate::utils::random_int;
 
 pub struct BVHNode {
@@ -43,7 +43,7 @@ impl BVHNode {
 impl Hittable for BVHNode {
     fn hit(&self, ray: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         if !self.bound_box.hit(ray, t_min, t_max) {
-            return Option::None
+            return Option::None;
         }
 
         let mut _t_max = t_max;

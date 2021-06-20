@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, Index, IndexMut};
+use std::ops::{Add, AddAssign, Div, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
 use rand::{Rng, thread_rng};
 use rand_distr::StandardNormal;
@@ -42,7 +42,7 @@ impl Vector3 {
     }
 
     pub fn near_zero(&self) -> bool {
-        const E: f32= 1e-6;
+        const E: f32 = 1e-6;
         self.x.abs() < E && self.y.abs() < E && self.z.abs() < E
     }
 
@@ -111,7 +111,7 @@ impl Mul<Vector3> for f32 {
     type Output = Vector3;
 
     fn mul(self, _rhs: Vector3) -> Self::Output {
-        Self::Output { x: self * _rhs.x, y: self * _rhs.y, z: self * _rhs.z}
+        Self::Output { x: self * _rhs.x, y: self * _rhs.y, z: self * _rhs.z }
     }
 }
 
@@ -139,7 +139,7 @@ impl Index<usize> for Vector3 {
             0 => &self.x,
             1 => &self.y,
             2 | _ => &self.z,
-        }
+        };
     }
 }
 
@@ -149,7 +149,7 @@ impl IndexMut<usize> for Vector3 {
             0 => &mut self.x,
             1 => &mut self.y,
             2 | _ => &mut self.z,
-        }
+        };
     }
 }
 
